@@ -30,7 +30,7 @@ const ProjectDetails: React.FC = () => {
     title: '',
     version: '',
     description: '',
-    type: 'feature' as const
+    type: 'feature' as 'feature' | 'bugfix' | 'improvement'
   });
 
   // Load project and notes
