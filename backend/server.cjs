@@ -148,6 +148,22 @@ app.put('/api/projects/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/projects/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Start transaction or just run multiple deletes
+    await dbRun("BEGIN TRANSACTION");
+    await dbRun("DELETE FROM projects WHERE id = ?", [id]);
+    await dbRun("DELETE FROM notes WHERE project_id = ?", [id]);
+    await dbRun("DELETE FROM version_logs WHERE project_id = ?", [id]);
+    await dbRun("COMMIT");
+    res.json({ success: true, message: "Project and associated data deleted" });
+  } catch (err) {
+    await dbRun("ROLLBACK");
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 2. Version Logs
 app.get('/api/logs', async (req, res) => {
   // Optional query param ?projectId=...

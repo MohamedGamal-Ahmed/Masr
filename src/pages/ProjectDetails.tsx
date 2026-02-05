@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Github, Folder, History, ClipboardList, AlertCircle, CheckCircle2, Clock, Send, Plus, Loader2, Edit2, Save, X } from 'lucide-react';
+import { ArrowRight, Github, Folder, History, ClipboardList, AlertCircle, CheckCircle2, Clock, Send, Plus, Loader2, Edit2, Save, X, Trash2 } from 'lucide-react';
 import { Note, Project, VersionLog } from '@/types';
 import { api } from '@/services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -197,7 +197,7 @@ const ProjectDetails: React.FC = () => {
         title: newVersionLog.title,
         version: newVersionLog.version || project?.version || 'v1.0.0',
         description: newVersionLog.description,
-        type: newVersionLog.type,
+        type: newVersionLog.type as any,
       } as any);
 
       setLogs(prev => [created, ...prev]);
@@ -206,6 +206,22 @@ const ProjectDetails: React.FC = () => {
     } catch (err) {
       console.error('Failed to create version log:', err);
       alert('فشل في إضافة التحديث');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!id || id === 'general') return;
+    if (!window.confirm('هل أنت متأكد من حذف هذا المشروع نهائياً؟ سيتم حذف جميع الملاحظات والمهام المرتبطة به.')) return;
+
+    setIsSaving(true);
+    try {
+      await api.projects.delete(id);
+      navigate('/projects');
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+      alert('فشل في حذف المشروع');
     } finally {
       setIsSaving(false);
     }
@@ -223,7 +239,18 @@ const ProjectDetails: React.FC = () => {
           <button onClick={() => navigate(-1)} className="p-2 bg-slate-900 rounded-lg border border-slate-800 hover:bg-slate-800">
             <ArrowRight size={20} />
           </button>
-          <h2 className="text-xl font-bold truncate max-w-[200px] md:max-w-md">{project.name}</h2>
+          <div className="flex flex-col">
+            <h2 className="text-xl font-bold truncate max-w-[150px] md:max-w-md">{project.name}</h2>
+            {id !== 'general' && (
+              <button
+                onClick={handleDeleteProject}
+                className="text-[10px] text-red-500 hover:text-red-400 flex items-center gap-0.5 mt-0.5 transition-colors"
+                disabled={isSaving}
+              >
+                <Trash2 size={10} /> حذف المشروع
+              </button>
+            )}
+          </div>
         </div>
         <span className={`px-3 py-1 text-xs rounded-full border ${project.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
           {project.status === 'active' ? 'نشط' : 'مؤرشف'}
@@ -501,7 +528,7 @@ const ProjectDetails: React.FC = () => {
                       title: `تحديث: ${n.title}`,
                       description: p.content,
                       version: n.status === 'completed' ? 'Done' : 'Update',
-                      type: n.type === 'bug' ? 'bugfix' : 'feature',
+                      type: (n.type === 'bug' ? 'bugfix' : 'feature') as any,
                       timelineType: 'note' as const
                     })))
                   ].sort((a, b) => {

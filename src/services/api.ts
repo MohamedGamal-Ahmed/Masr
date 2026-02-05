@@ -55,6 +55,12 @@ export const api = {
             const data = await response.json();
             return mapProjectFromDb(data);
         },
+        delete: async (id: string): Promise<void> => {
+            const response = await fetch(`${API_BASE}/projects/${id}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) throw new Error('Failed to delete project');
+        },
     },
 
     // --- Version Logs ---
