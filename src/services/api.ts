@@ -287,6 +287,21 @@ export const api = {
             });
             if (!response.ok) throw new Error('Token غير صالح');
             return response.json();
+        },
+
+        getFile: async (token: string, username: string, fileName: string): Promise<Blob> => {
+            const repo = 'masar-data-backup';
+            const url = `https://api.github.com/repos/${username}/${repo}/contents/${fileName}`;
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3.raw', // Get raw content
+                }
+            });
+
+            if (!response.ok) throw new Error('فشل جلب ملف النسخة الاحتياطية من GitHub');
+            return response.blob();
         }
     },
 
@@ -296,6 +311,21 @@ export const api = {
             const response = await fetch(`${API_BASE}/backup/export`);
             if (!response.ok) throw new Error('Failed to export backup');
             return response.blob();
+        },
+        import: async (file: File): Promise<{ success: boolean; message: string }> => {
+            const formData = new FormData();
+            formData.append('backup', file);
+
+            const response = await fetch(`${API_BASE}/backup/import`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'فشل استيراد البيانات');
+            }
+            return response.json();
         }
     }
 };

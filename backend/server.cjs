@@ -4,8 +4,10 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
 
 const app = express();
+const upload = multer({ dest: 'uploads/' });
 const PORT = 3004;
 const DB_PATH = path.join(__dirname, '..', 'devlog.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
@@ -15,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 // Database Initialization
-const db = new sqlite3.Database(DB_PATH, (err) => {
+let db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
   } else {
@@ -281,6 +283,55 @@ app.get('/api/backup/export', (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/backup/import', upload.single('backup'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  const tempPath = req.file.path;
+  const targetPath = DB_PATH;
+
+  try {
+    // 1. Close current connection
+    await new Promise((resolve, reject) => {
+      db.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // 2. Backup current DB just in case
+    if (fs.existsSync(targetPath)) {
+      if (fs.existsSync(targetPath + '.bak')) {
+        fs.unlinkSync(targetPath + '.bak');
+      }
+      fs.renameSync(targetPath, targetPath + '.bak');
+    }
+
+    // 3. Move new DB into place
+    fs.renameSync(tempPath, targetPath);
+
+    // 4. Re-open connection
+    db = new sqlite3.Database(DB_PATH, (err) => {
+      if (err) {
+        console.error('Error re-opening database:', err.message);
+      } else {
+        console.log('Database re-opened after import.');
+        initDb();
+      }
+    });
+
+    res.json({ success: true, message: 'Data imported successfully. App may need a refresh.' });
+  } catch (err) {
+    console.error('Import failed:', err);
+    // Try to restore from backup if it fails
+    if (fs.existsSync(targetPath + '.bak')) {
+      fs.renameSync(targetPath + '.bak', targetPath);
+    }
+    res.status(500).json({ error: 'Failed to import data: ' + err.message });
   }
 });
 

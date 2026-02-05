@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Webhook, Bell, Lock, Github, Radio, Check, Mail, LifeBuoy, ArrowUpRight, RotateCcw } from 'lucide-react';
+import { Github, Mail, LifeBuoy, ArrowUpRight, RotateCcw } from 'lucide-react';
 import BackupModal from '../components/BackupModal';
 
 const Settings: React.FC = () => {
@@ -47,7 +47,7 @@ App Version: ${appVersion}
     <div className="space-y-6 pb-20 animate-fade-in">
       <h2 className="text-2xl font-bold mb-4">الإعدادات والربط</h2>
 
-      {/* Support & Feedback Section (New) */}
+      {/* Support & Feedback Section */}
       <div className="bg-gradient-to-br from-blue-900/20 to-slate-900 border border-blue-500/30 rounded-xl overflow-hidden relative">
         <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
 
@@ -86,10 +86,10 @@ App Version: ${appVersion}
             إدارة النسخ والاحتفاظ بالبيانات
           </h3>
         </div>
-        <div className="p-4 space-y-4">
+        <div className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm text-slate-200 block">مزامنة البيانات سحابياً</span>
+              <span className="text-sm text-slate-200 block font-sans">مزامنة البيانات سحابياً</span>
               <span className="text-[10px] text-slate-500">حفظ نسخة من قاعدة البيانات على حسابك في GitHub</span>
             </div>
             <button
@@ -99,91 +99,16 @@ App Version: ${appVersion}
               إعداد النسخ الاحتياطي
             </button>
           </div>
-
-          <div className="pt-4 border-t border-slate-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm text-slate-200 block">مزامنة CHANGELOG.md</span>
-                <span className="text-[10px] text-slate-500">دفع التغييرات تلقائياً إلى GitHub</span>
-              </div>
-              <div className="w-11 h-6 bg-blue-600 rounded-full relative cursor-pointer opacity-50">
-                <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 shadow-sm"></div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm text-slate-200 block">إنشاء Tags تلقائياً</span>
-                <span className="text-[10px] text-slate-500">عند اكتمال Milestone جديد</span>
-              </div>
-              <div className="w-11 h-6 bg-slate-700 rounded-full relative cursor-pointer opacity-50">
-                <div className="w-5 h-5 bg-slate-400 rounded-full absolute top-0.5 left-0.5 shadow-sm"></div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       <BackupModal isOpen={isBackupOpen} onClose={() => setIsBackupOpen(false)} />
 
-      {/* Webhooks Section */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-slate-800">
-          <h3 className="font-bold text-slate-200 flex items-center gap-2">
-            <Webhook size={18} className="text-purple-500" />
-            إشعارات الـ Webhooks
-          </h3>
-        </div>
-        <div className="p-4 space-y-4">
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-[#5865F2] flex items-center justify-center">
-                <span className="text-white font-bold text-xs">D</span>
-              </div>
-              <div>
-                <span className="text-sm font-bold block">Discord</span>
-                <span className="text-[10px] text-green-500">متصل نشط</span>
-              </div>
-            </div>
-            <button className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded border border-slate-700">تعديل</button>
-          </div>
-
-          <div className="relative">
-            <label className="text-[10px] text-slate-500 mb-1 block">رابط الـ Webhook</label>
-            <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-2 items-center">
-              <span className="text-xs text-slate-600 select-none">https://discord.com/api/webhooks/...</span>
-              <Lock size={12} className="mr-auto text-slate-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Alert Settings */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-slate-800">
-          <h3 className="font-bold text-slate-200 flex items-center gap-2">
-            <Bell size={18} className="text-yellow-500" />
-            تنبيهات ركود المشاريع
-          </h3>
-        </div>
-        <div className="p-4 flex gap-4 overflow-x-auto no-scrollbar">
-          {[
-            { label: 'حذرة', days: '14 يوم', color: 'bg-yellow-500/10 border-yellow-500/30' },
-            { label: 'حرجة', days: '30 يوم', color: 'bg-red-500/10 border-red-500/30' }
-          ].map((alert, idx) => (
-            <div key={idx} className={`min-w-[120px] p-3 rounded-lg border ${alert.color} flex flex-col items-center justify-center`}>
-              <span className="text-xs text-slate-300 mb-1">{alert.label}</span>
-              <span className="text-xl font-bold text-white">{alert.days}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Debug / Reset Zone */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-slate-800">
           <h3 className="font-bold text-slate-200 flex items-center gap-2">
-            <RotateCcw size={18} className="text-slate-500" />
+            <RotateCcw size={18} className="text-slate-400" />
             إجراءات تصحيحية
           </h3>
         </div>

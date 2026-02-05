@@ -60,23 +60,39 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   }, []);
 
-  // Fetch notifications from API (recent logs)
+  // Fetch notifications from API (recent activities)
   useEffect(() => {
     const fetchNotifications = async () => {
       setIsLoadingNotifications(true);
       try {
-        const logs = await api.logs.getAll();
-        // Convert logs to notifications format
-        const notifs: Notification[] = logs.slice(0, 5).map(log => ({
-          text: `${log.title}: ${Array.isArray(log.changes) ? log.changes[0] : log.changes}`,
-          time: formatRelativeTime(log.date),
+        const [logs, notes] = await Promise.all([
+          api.logs.getAll(),
+          api.notes.getAll()
+        ]);
+
+        // Combine and format activities
+        const allActivities = [
+          ...logs.map(log => ({
+            text: `تحديث: ${log.title}`,
+            date: log.date
+          })),
+          ...notes.flatMap(note => (note.progressLogs || []).slice(-2).map(p => ({
+            text: `تقدم: ${note.title} - ${p.content.substring(0, 30)}...`,
+            date: p.date
+          })))
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        const notifs: Notification[] = allActivities.slice(0, 8).map(act => ({
+          text: act.text,
+          time: formatRelativeTime(act.date),
         }));
+
         setNotifications(notifs.length > 0 ? notifs : [
-          { text: 'لا توجد إشعارات جديدة', time: 'الآن' }
+          { text: 'لا توجد نشاطات حديثة', time: 'الآن' }
         ]);
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
-        setNotifications([{ text: 'فشل في جلب الإشعارات', time: '' }]);
+        setNotifications([{ text: 'فشل في جلب التحديثات', time: '' }]);
       } finally {
         setIsLoadingNotifications(false);
       }

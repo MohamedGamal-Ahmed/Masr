@@ -344,7 +344,7 @@ const ProjectDetails: React.FC = () => {
                           className="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                         >
                           {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                          حفظ
+                          حفظ الإعدادات
                         </button>
                       </>
                     ) : (
@@ -503,7 +503,7 @@ const ProjectDetails: React.FC = () => {
                         </button>
                       </div>
                       <div className="flex gap-1">
-                        {(['feature', 'bugfix', 'improvement'] as const).map(t => (
+                        {(['feature', 'bugfix', 'improvement'] as const).map((t: 'feature' | 'bugfix' | 'improvement') => (
                           <button
                             key={t}
                             onClick={() => setNewVersionLog({ ...newVersionLog, type: t })}
