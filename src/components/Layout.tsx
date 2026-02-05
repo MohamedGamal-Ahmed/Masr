@@ -80,7 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             text: `تقدم: ${note.title} - ${p.content.substring(0, 30)}...`,
             date: p.date
           })))
-        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        ].sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
 
         const notifs: Notification[] = allActivities.slice(0, 8).map(act => ({
           text: act.text,
@@ -101,8 +101,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   // Helper to format relative time
+  const parseDate = (dateStr: string): Date => {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+
+    // Fallback for ar-EG format: "5/2/2026" or similar
+    try {
+      const parts = dateStr.match(/\d+/g);
+      if (parts && parts.length >= 3) {
+        // Assume day/month/year for ar-EG
+        return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      }
+    } catch (e) { }
+    return new Date(); // Fallback to current time
+  };
+
   const formatRelativeTime = (dateStr: string): string => {
-    const date = new Date(dateStr);
+    const date = parseDate(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);

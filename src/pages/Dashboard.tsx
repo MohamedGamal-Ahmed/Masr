@@ -12,7 +12,7 @@ const StatCard = memo(({ icon: Icon, value, label, colorClass }: { icon: any, va
   </div>
 ));
 
-const ActivityItem = memo(({ log }: { log: VersionLog }) => (
+const ActivityItem = memo(({ log }: { log: VersionLog | any }) => (
   <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex gap-4">
     <div className="flex flex-col items-center">
       <div className={`w-2 h-2 rounded-full mb-1 ${log.type === 'bugfix' ? 'bg-red-500' : log.type === 'feature' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
@@ -20,7 +20,9 @@ const ActivityItem = memo(({ log }: { log: VersionLog }) => (
     </div>
     <div className="flex-1">
       <div className="flex justify-between items-start">
-        <span className="text-xs font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">{log.version}</span>
+        <span className="text-[10px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+          {log.version || (log.timelineType === 'note' ? 'Update' : 'v1.0.0')}
+        </span>
         <span className="text-[10px] text-slate-500 flex items-center gap-1">
           {log.date} <Clock size={10} />
         </span>
@@ -33,7 +35,7 @@ const ActivityItem = memo(({ log }: { log: VersionLog }) => (
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<{ activeProjects: number, streak: number, syncStatus: number, lastSyncTime: string } | null>(null);
-  const [recentLogs, setRecentLogs] = useState<VersionLog[]>([]);
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
   const [activeReminders, setActiveReminders] = useState<Note[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +60,30 @@ const Dashboard: React.FC = () => {
             ? new Date(dashboardStats.lastSyncTime).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' })
             : 'لا يوجد'
         });
-        setRecentLogs(allLogs.slice(0, 3));
+        const combinedActivity = [
+          ...allLogs.map(l => ({ ...l, timelineType: 'version' as const })),
+          ...allNotes.flatMap(n => (n.progressLogs || []).map(p => ({
+            id: p.id,
+            date: p.date,
+            title: `تحديث: ${n.title}`,
+            description: p.content,
+            type: (n.type === 'bug' ? 'bugfix' : 'feature') as any,
+            timelineType: 'note' as const
+          })))
+        ].sort((a, b) => {
+          const parseDate = (dStr: string) => {
+            const d = new Date(dStr);
+            if (!isNaN(d.getTime())) return d.getTime();
+            const parts = dStr.match(/\d+/g);
+            if (parts && parts.length >= 3) {
+              return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+            }
+            return 0;
+          };
+          return parseDate(b.date) - parseDate(a.date);
+        });
+
+        setRecentLogs(combinedActivity.slice(0, 5));
         // Any note that is 'pending' or 'in_progress' is considered a task
         setActiveReminders(allNotes.filter(n => n.status === 'pending' || n.status === 'in_progress'));
         setProjects(allProjects);

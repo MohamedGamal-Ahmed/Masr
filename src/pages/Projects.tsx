@@ -8,6 +8,25 @@ import { StaggerContainer, StaggerItem, ScaleHover } from '@/components/Animatio
 // Default GitHub username - can be changed in the modal
 const DEFAULT_GITHUB_USERNAME = 'MohamedGamal-Ahmed';
 
+const getLanguageIcon = (lang: string) => {
+  const l = (lang || '').toLowerCase();
+  if (l.includes('python')) return <span className="text-yellow-400 font-bold">Py</span>;
+  if (l.includes('typescript') || l === 'ts') return <span className="text-blue-400 font-bold">TS</span>;
+  if (l.includes('javascript') || l === 'js') return <span className="text-yellow-300 font-bold">JS</span>;
+  if (l.includes('react native')) return <span className="text-blue-400 font-bold">R</span>;
+  if (l.includes('dart') || l.includes('flutter')) return <span className="text-blue-500 font-bold">Da</span>;
+  if (l.includes('java')) return <span className="text-red-500 font-bold">Ja</span>;
+  if (l.includes('html')) return <span className="text-orange-500 font-bold">Ht</span>;
+  if (l.includes('css')) return <span className="text-blue-500 font-bold">Cs</span>;
+  if (l.includes('sql') || l.includes('db')) return <span className="text-purple-400 font-bold">DB</span>;
+
+  if (lang && lang.length >= 2) {
+    return <span className="text-slate-400 font-bold">{lang.substring(0, 2)}</span>;
+  }
+
+  return <Code2 className="text-slate-400" size={20} />;
+};
+
 const Projects: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,7 +112,6 @@ const Projects: React.FC = () => {
           description: repo.description,
           language: repo.language,
           version: 'v1.0.0',
-          status: 'active',
           repoUrl: repo.htmlUrl,
           localPath: '',
           branch: repo.defaultBranch,
@@ -201,13 +219,7 @@ const Projects: React.FC = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
-                            {project.language === 'Python' ? (
-                              <span className="text-yellow-400 font-bold">Py</span>
-                            ) : project.language === 'React Native' ? (
-                              <span className="text-blue-400 font-bold">R</span>
-                            ) : (
-                              <Code2 className="text-slate-400" size={20} />
-                            )}
+                            {getLanguageIcon(project.language)}
                           </div>
                           <div>
                             <h3 className="font-bold text-slate-100">{project.name}</h3>
@@ -326,8 +338,8 @@ const Projects: React.FC = () => {
                   key={repo.id}
                   onClick={() => toggleRepoSelection(repo.id)}
                   className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedRepos.has(repo.id)
-                      ? 'bg-blue-500/10 border-blue-500/50'
-                      : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                    ? 'bg-blue-500/10 border-blue-500/50'
+                    : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
                     }`}
                 >
                   <div className="flex items-start justify-between">
