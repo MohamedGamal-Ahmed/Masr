@@ -30,6 +30,23 @@ const ProjectDetails: React.FC = () => {
       if (!id) return;
       try {
         setIsLoading(true);
+
+        if (id === 'general') {
+          const allNotes = await api.notes.getAll();
+          setProject({
+            id: 'general',
+            name: 'ملاحظات عامة',
+            description: 'ملاحظات وأفكار غير مرتبطة بمشروع معين',
+            language: 'General',
+            status: 'active',
+            version: 'N/A'
+          } as Project);
+          setProjectNotes(allNotes.filter(n => !n.projectId || n.projectId === 'general'));
+          setLogs([]);
+          setIsLoading(false);
+          return;
+        }
+
         const [foundProject, allNotes, allLogs] = await Promise.all([
           api.projects.getById(id),
           api.notes.getAll(),
@@ -250,93 +267,99 @@ const ProjectDetails: React.FC = () => {
               {/* Paths */}
               <div className="space-y-3 pt-2">
                 {/* Edit/Save buttons */}
-                <div className="flex justify-end gap-2">
-                  {isEditing ? (
-                    <>
+                {id !== 'general' && (
+                  <div className="flex justify-end gap-2">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={cancelEditing}
+                          className="flex items-center gap-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          <X size={14} />
+                          إلغاء
+                        </button>
+                        <button
+                          onClick={handleSaveProject}
+                          disabled={isSaving}
+                          className="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                          حفظ
+                        </button>
+                      </>
+                    ) : (
                       <button
-                        onClick={cancelEditing}
+                        onClick={startEditing}
                         className="flex items-center gap-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        <X size={14} />
-                        إلغاء
+                        <Edit2 size={14} />
+                        تعديل الروابط
                       </button>
-                      <button
-                        onClick={handleSaveProject}
-                        disabled={isSaving}
-                        className="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                        حفظ
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={startEditing}
-                      className="flex items-center gap-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      <Edit2 size={14} />
-                      تعديل الروابط
-                    </button>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Repo URL */}
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/50">
-                  <div className="flex items-center gap-3">
-                    <Github size={18} className="text-slate-500 min-w-[18px]" />
-                    <div className="flex flex-col flex-1 overflow-hidden text-right">
-                      <span className="text-[10px] text-slate-500">رابط المستودع (GitHub)</span>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editRepoUrl}
-                          onChange={(e) => setEditRepoUrl(e.target.value)}
-                          placeholder="https://github.com/username/repo"
-                          className="mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-blue-400 focus:outline-none focus:border-blue-500"
-                          dir="ltr"
-                        />
-                      ) : project.repoUrl ? (
-                        <a
-                          href={project.repoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-mono truncate dir-ltr text-left text-blue-400 hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {project.repoUrl}
-                        </a>
-                      ) : (
-                        <span className="text-xs font-mono text-slate-500">
-                          غير مرتبط - اضغط تعديل لإضافة
-                        </span>
-                      )}
+                {id !== 'general' && (
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/50">
+                    <div className="flex items-center gap-3">
+                      <Github size={18} className="text-slate-500 min-w-[18px]" />
+                      <div className="flex flex-col flex-1 overflow-hidden text-right">
+                        <span className="text-[10px] text-slate-500">رابط المستودع (GitHub)</span>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editRepoUrl}
+                            onChange={(e) => setEditRepoUrl(e.target.value)}
+                            placeholder="https://github.com/username/repo"
+                            className="mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-blue-400 focus:outline-none focus:border-blue-500"
+                            dir="ltr"
+                          />
+                        ) : project.repoUrl ? (
+                          <a
+                            href={project.repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-mono truncate dir-ltr text-left text-blue-400 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {project.repoUrl}
+                          </a>
+                        ) : (
+                          <span className="text-xs font-mono text-slate-500">
+                            غير مرتبط - اضغط تعديل لإضافة
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Local Path */}
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/50">
-                  <div className="flex items-center gap-3">
-                    <Folder size={18} className="text-slate-500 min-w-[18px]" />
-                    <div className="flex flex-col flex-1 overflow-hidden text-right">
-                      <span className="text-[10px] text-slate-500">المسار المحلي</span>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editLocalPath}
-                          onChange={(e) => setEditLocalPath(e.target.value)}
-                          placeholder="D:\Projects\MyProject"
-                          className="mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-emerald-500 focus:outline-none focus:border-blue-500"
-                          dir="ltr"
-                        />
-                      ) : (
-                        <span className={`text-xs font-mono truncate dir-ltr text-left ${project.localPath ? 'text-emerald-500' : 'text-slate-500'}`}>
-                          {project.localPath || 'غير محدد - اضغط تعديل لإضافة'}
-                        </span>
-                      )}
+                {id !== 'general' && (
+                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800/50">
+                    <div className="flex items-center gap-3">
+                      <Folder size={18} className="text-slate-500 min-w-[18px]" />
+                      <div className="flex flex-col flex-1 overflow-hidden text-right">
+                        <span className="text-[10px] text-slate-500">المسار المحلي</span>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editLocalPath}
+                            onChange={(e) => setEditLocalPath(e.target.value)}
+                            placeholder="D:\Projects\MyProject"
+                            className="mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-emerald-500 focus:outline-none focus:border-blue-500"
+                            dir="ltr"
+                          />
+                        ) : (
+                          <span className={`text-xs font-mono truncate dir-ltr text-left ${project.localPath ? 'text-emerald-500' : 'text-slate-500'}`}>
+                            {project.localPath || 'غير محدد - اضغط تعديل لإضافة'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {project.description && (

@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Tag, PenTool, Hash, Info, Loader2 } from 'lucide-react';
+import { Save, Tag, PenTool, Hash, Info, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Note, Project } from '@/types';
 import { api } from '@/services/api';
+import { z } from 'zod';
+
+const noteSchema = z.object({
+  projectId: z.string().nullable(),
+  type: z.enum(['idea', 'bug', 'todo']),
+  content: z.string().min(3, 'محتوى الملاحظة قصير جداً (3 أحرف على الأقل)'),
+  title: z.string().optional(),
+});
 
 const AddNote: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +18,7 @@ const AddNote: React.FC = () => {
   const [noteType, setNoteType] = useState<'idea' | 'bug' | 'todo'>('idea');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
@@ -30,12 +39,25 @@ const AddNote: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
-    if (!content.trim()) {
-      alert("الرجاء كتابة محتوى الملاحظة أولاً");
+    const rawData = {
+      projectId: selectedProject || null,
+      type: noteType,
+      content: content.trim(),
+    };
+
+    // Validate with Zod
+    const result = noteSchema.safeParse(rawData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach(err => {
+        if (err.path[0]) errors[err.path[0] as string] = err.message;
+      });
+      setFormErrors(errors);
       return;
     }
 
     setIsSaving(true);
+    setFormErrors({});
 
     try {
       // Generate title from content
@@ -44,10 +66,10 @@ const AddNote: React.FC = () => {
 
       // Save to API
       await api.notes.create({
-        projectId: selectedProject || 'general',
+        projectId: rawData.projectId,
         title: title,
-        content: content,
-        type: noteType,
+        content: rawData.content,
+        type: rawData.type,
         status: 'pending',
         reminder: true, // Default to true for task awareness
       });
@@ -122,10 +144,24 @@ const AddNote: React.FC = () => {
         </label>
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value);
+            if (formErrors.content) setFormErrors(prev => {
+              const next = { ...prev };
+              delete next.content;
+              return next;
+            });
+          }}
           placeholder="اكتب هنا... يمكنك استخدام Markdown بسيط للكود."
-          className="w-full h-48 bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-200 focus:border-blue-500 focus:outline-none font-mono text-sm leading-relaxed resize-none"
+          className={`w-full h-48 bg-slate-900 border ${formErrors.content ? 'border-red-500/50' : 'border-slate-800'
+            } rounded-xl p-4 text-slate-200 focus:border-blue-500 focus:outline-none font-mono text-sm leading-relaxed resize-none`}
         ></textarea>
+        {formErrors.content && (
+          <div className="flex items-center gap-1.5 text-xs text-red-500 mt-1 mr-1">
+            <AlertCircle size={14} />
+            <span>{formErrors.content}</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 text-[10px] text-slate-500 bg-slate-900/50 p-2 rounded">
           <Info size={12} />
           <span>نصيحة: استخدم ``` للكتابة كـ Code Block.</span>

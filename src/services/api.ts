@@ -35,7 +35,7 @@ export const api = {
             const data = await response.json();
             return mapProjectFromDb(data);
         },
-        create: async (project: Omit<Project, 'id' | 'lastUpdate'>): Promise<Project> => {
+        create: async (project: Omit<Project, 'id' | 'lastUpdate' | 'status'>): Promise<Project> => {
             const response = await fetch(`${API_BASE}/projects`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

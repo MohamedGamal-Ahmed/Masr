@@ -100,13 +100,19 @@ app.get('/api/projects/:id', async (req, res) => {
 });
 
 app.post('/api/projects', async (req, res) => {
-  const { name, description, language, version, status, repoUrl, localPath, branch } = req.body;
-  const id = uuidv4();
-  const sql = `INSERT INTO projects (id, name, description, language, version, status, repo_url, local_path, branch) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const { name, description, language, version, repoUrl, localPath, branch } = req.body;
 
+  // Validation
+  if (!name || name.length < 2) return res.status(400).json({ error: 'Name is required (min 2 chars)' });
+  if (!language) return res.status(400).json({ error: 'Language is required' });
+  if (!version || !/^v\d+\.\d+\.\d+$/.test(version)) return res.status(400).json({ error: 'Invalid version format (e.g. v1.0.0)' });
+
+  const id = uuidv4();
   try {
-    await dbRun(sql, [id, name, description, language, version || 'v0.0.1', status || 'active', repoUrl, localPath, branch || 'main']);
+    await dbRun(
+      "INSERT INTO projects (id, name, description, language, version, repo_url, local_path, branch) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [id, name, description, language, version, repoUrl, localPath, branch || 'main']
+    );
     const newProject = await dbGet("SELECT * FROM projects WHERE id = ?", [id]);
     res.status(201).json(newProject);
   } catch (err) {
@@ -199,11 +205,20 @@ app.get('/api/notes', async (req, res) => {
 
 app.post('/api/notes', async (req, res) => {
   const { projectId, title, content, type, status, reminder } = req.body;
+
+  // Basic Validation
+  if (!content || content.trim().length < 3) {
+    return res.status(400).json({ error: 'Content is required and must be at least 3 characters' });
+  }
+  if (!['idea', 'bug', 'todo'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid note type' });
+  }
+
   const id = uuidv4();
   try {
     await dbRun(
       "INSERT INTO notes (id, project_id, title, content, type, status, reminder) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [id, projectId, title, content, type, status || 'pending', reminder !== undefined ? (reminder ? 1 : 0) : 1]
+      [id, projectId === 'general' ? null : projectId, title, content, type, status || 'pending', reminder !== undefined ? (reminder ? 1 : 0) : 1]
     );
     const newNote = await dbGet("SELECT * FROM notes WHERE id = ?", [id]);
     res.status(201).json(newNote);

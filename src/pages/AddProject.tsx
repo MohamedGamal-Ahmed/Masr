@@ -132,8 +132,14 @@ const AddProject: React.FC = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="مثال: تطبيق المتجر الإلكتروني"
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 focus:border-blue-500 focus:outline-none"
+              className={`w-full bg-slate-900 border ${formErrors.name ? 'border-red-500/50' : 'border-slate-800'} rounded-xl p-3 text-slate-200 focus:border-blue-500 focus:outline-none`}
             />
+            {formErrors.name && (
+              <div className="flex items-center gap-1.5 text-xs text-red-500 mt-1 mr-1">
+                <AlertCircle size={14} />
+                <span>{formErrors.name}</span>
+              </div>
+            )}
           </div>
 
           {/* Custom Language Dropdown */}
@@ -145,7 +151,7 @@ const AddProject: React.FC = () => {
 
             <div
               onClick={() => setIsLangOpen(!isLangOpen)}
-              className={`w-full bg-slate-900 border ${isLangOpen ? 'border-blue-500' : 'border-slate-800'} rounded-xl p-3 text-slate-200 cursor-pointer flex justify-between items-center transition-all hover:border-slate-700`}
+              className={`w-full bg-slate-900 border ${isLangOpen ? 'border-blue-500' : formErrors.language ? 'border-red-500/50' : 'border-slate-800'} rounded-xl p-3 text-slate-200 cursor-pointer flex justify-between items-center transition-all hover:border-slate-700`}
             >
               {formData.language ? (
                 <div className="flex items-center gap-3">
@@ -165,6 +171,12 @@ const AddProject: React.FC = () => {
               )}
               <ChevronDown size={18} className={`text-slate-500 transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
             </div>
+            {formErrors.language && (
+              <div className="flex items-center gap-1.5 text-xs text-red-500 mt-1 mr-1">
+                <AlertCircle size={14} />
+                <span>{formErrors.language}</span>
+              </div>
+            )}
 
             {isLangOpen && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-50 max-h-64 overflow-y-auto no-scrollbar p-1 animate-fade-in">
@@ -228,9 +240,15 @@ const AddProject: React.FC = () => {
               value={formData.version}
               onChange={handleChange}
               placeholder="v1.0.0"
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 focus:border-blue-500 focus:outline-none font-mono"
+              className={`w-full bg-slate-900 border ${formErrors.version ? 'border-red-500/50' : 'border-slate-800'} rounded-xl p-3 text-slate-200 focus:border-blue-500 focus:outline-none font-mono`}
               dir="ltr"
             />
+            {formErrors.version && (
+              <div className="flex items-center gap-1.5 text-xs text-red-500 mt-1 mr-1">
+                <AlertCircle size={14} />
+                <span>{formErrors.version}</span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
