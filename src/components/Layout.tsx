@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, FolderGit2, PlusSquare, BarChart2, Settings, User, Bell, LogOut, Code, Info, Loader2 } from 'lucide-react';
+import { Home, FolderGit2, PlusSquare, BarChart2, Settings, User, Bell, Code, Info, Loader2 } from 'lucide-react';
 import { api } from '@/services/api';
 import { VersionLog } from '@/types';
 
@@ -221,10 +221,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </button>
                     <button onClick={() => navigate('/settings')} className="w-full text-right p-2 text-xs text-slate-300 hover:bg-slate-800 rounded-lg flex items-center gap-2">
                       <Settings size={14} /> الإعدادات
-                    </button>
-                    <div className="border-t border-slate-800 my-1"></div>
-                    <button className="w-full text-right p-2 text-xs text-red-400 hover:bg-slate-800 rounded-lg flex items-center gap-2">
-                      <LogOut size={14} /> تسجيل الخروج
                     </button>
                   </div>
                 </div>
