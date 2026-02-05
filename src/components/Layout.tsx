@@ -110,8 +110,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-l border-slate-800 z-50">
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">م</span>
+          <div className="w-9 h-9 flex items-center justify-center overflow-hidden rounded-lg">
+            <img src="/logo.png" alt="Masar Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-xl font-bold text-white tracking-wide">مسار | Masar</h1>
         </div>
@@ -141,8 +141,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Mobile Header / Desktop Topbar */}
         <header className="flex-none p-4 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 md:bg-slate-950">
           <div className="flex items-center space-x-3 space-x-reverse md:hidden">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">م</span>
+            <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-lg">
+              <img src="/logo.png" alt="Masar Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-lg font-bold text-white tracking-wide">مسار</h1>
           </div>

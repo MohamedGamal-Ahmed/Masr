@@ -24,6 +24,15 @@ const ProjectDetails: React.FC = () => {
   const [editVersion, setEditVersion] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // New Log/History state
+  const [showAddVersionLog, setShowAddVersionLog] = useState(false);
+  const [newVersionLog, setNewVersionLog] = useState({
+    title: '',
+    version: '',
+    description: '',
+    type: 'feature' as const
+  });
+
   // Load project and notes
   useEffect(() => {
     const fetchData = async () => {
@@ -176,6 +185,30 @@ const ProjectDetails: React.FC = () => {
     setEditRepoUrl('');
     setEditLocalPath('');
     setEditVersion('');
+  };
+
+  const handleCreateVersionLog = async () => {
+    if (!id || !newVersionLog.title || !newVersionLog.description) return;
+
+    setIsSaving(true);
+    try {
+      const created = await api.logs.create({
+        projectId: id,
+        title: newVersionLog.title,
+        version: newVersionLog.version || project?.version || 'v1.0.0',
+        description: newVersionLog.description,
+        type: newVersionLog.type,
+      } as any);
+
+      setLogs(prev => [created, ...prev]);
+      setShowAddVersionLog(false);
+      setNewVersionLog({ title: '', version: '', description: '', type: 'feature' });
+    } catch (err) {
+      console.error('Failed to create version log:', err);
+      alert('فشل في إضافة التحديث');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const progress = projectNotes.length > 0
@@ -371,34 +404,155 @@ const ProjectDetails: React.FC = () => {
             </div>
 
             {/* Version History (Timeline) */}
-            <div>
-              <div className="flex items-center gap-2 mb-4 justify-end">
-                <h3 className="font-bold text-lg">سجل التغييرات</h3>
-                <History size={18} className="text-slate-400" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setShowAddVersionLog(!showAddVersionLog)}
+                  className="flex items-center gap-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <Plus size={14} /> إضافة تحديث رسمي
+                </button>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-lg">سجل التغييرات والنشاط</h3>
+                  <History size={18} className="text-slate-400" />
+                </div>
               </div>
 
-              <div className="relative border-r border-slate-800 mr-3 space-y-8">
-                {logs.length > 0 ? logs.map((log) => (
-                  <div key={log.id} className="relative pr-6 text-right">
-                    {/* Timeline Dot */}
-                    <div className={`absolute -right-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-950 ${log.type === 'bugfix' ? 'bg-red-500' : log.type === 'feature' ? 'bg-blue-500' : 'bg-emerald-500'
-                      }`}></div>
-
-                    {/* Content */}
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between items-center text-right">
-                        <span className="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-400">{log.version}</span>
-                        <span className="text-sm font-bold text-slate-200">{log.title}</span>
+              {/* Add Version Log Form */}
+              <AnimatePresence>
+                {showAddVersionLog && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="bg-slate-900 border border-blue-500/30 rounded-xl p-4 mb-6 space-y-3 overflow-hidden shadow-lg shadow-blue-900/10"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-500 mr-1">الإصدار</label>
+                        <input
+                          type="text"
+                          value={newVersionLog.version}
+                          onChange={e => setNewVersionLog({ ...newVersionLog, version: e.target.value })}
+                          placeholder={project?.version || "v1.0.0"}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs font-mono text-blue-400 focus:outline-none"
+                          dir="ltr"
+                        />
                       </div>
-                      <span className="text-[10px] text-slate-500 mb-1">{log.date}</span>
-                      <p className="text-sm text-slate-400 leading-relaxed bg-slate-900/50 p-3 rounded-lg border border-slate-800/50 font-sans">
-                        {log.description}
-                      </p>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-500 mr-1">عنوان التحديث</label>
+                        <input
+                          type="text"
+                          value={newVersionLog.title}
+                          onChange={e => setNewVersionLog({ ...newVersionLog, title: e.target.value })}
+                          placeholder="مثال: إضافة الوضع الليلي"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )) : (
-                  <div className="pr-6 text-slate-500 text-sm italic">لا توجد تحديثات مسجلة بعد لهذا المشروع...</div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-slate-500 mr-1">التفاصيل</label>
+                      <textarea
+                        value={newVersionLog.description}
+                        onChange={e => setNewVersionLog({ ...newVersionLog, description: e.target.value })}
+                        placeholder="ماذا تم في هذا التحديث؟"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 h-20 resize-none focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center bg-slate-950/50 p-2 rounded-lg">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowAddVersionLog(false)}
+                          className="text-xs text-slate-500 hover:text-slate-400 px-2"
+                        >
+                          إلغاء
+                        </button>
+                        <button
+                          onClick={handleCreateVersionLog}
+                          disabled={isSaving || !newVersionLog.title}
+                          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                        >
+                          {isSaving ? <Loader2 size={12} className="animate-spin" /> : 'حفظ التحديث'}
+                        </button>
+                      </div>
+                      <div className="flex gap-1">
+                        {(['feature', 'bugfix', 'improvement'] as const).map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setNewVersionLog({ ...newVersionLog, type: t })}
+                            className={`px-2 py-1 rounded text-[10px] transition-colors ${newVersionLog.type === t ? 'bg-slate-700 text-white' : 'text-slate-500 hover:bg-slate-800'}`}
+                          >
+                            {t === 'feature' ? 'ميزة' : t === 'bugfix' ? 'إصلاح' : 'تحسين'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
+              </AnimatePresence>
+
+              <div className="relative border-r border-slate-800 mr-3 space-y-8 pb-4">
+                {(() => {
+                  const combinedItems = [
+                    ...logs.map(l => ({ ...l, timelineType: 'version' as const })),
+                    ...projectNotes.flatMap(n => (n.progressLogs || []).map(p => ({
+                      id: p.id,
+                      date: p.date,
+                      title: `تحديث: ${n.title}`,
+                      description: p.content,
+                      version: n.status === 'completed' ? 'Done' : 'Update',
+                      type: n.type === 'bug' ? 'bugfix' : 'feature',
+                      timelineType: 'note' as const
+                    })))
+                  ].sort((a, b) => {
+                    // Simple hack for Arabic dates: check year/month/day if possible, 
+                    // otherwise fall back to lexicographical for same-day items
+                    const getTimestamp = (dStr: string) => {
+                      try {
+                        // Attempt to extract numeric parts for a rough comparison
+                        const parts = dStr.match(/\d+/g);
+                        if (parts && parts.length >= 3) {
+                          // ar-EG usually: day/month/year or similar
+                          return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+                        }
+                      } catch (e) { }
+                      return 0;
+                    };
+                    return getTimestamp(b.date) - getTimestamp(a.date);
+                  });
+
+                  return combinedItems.length > 0 ? combinedItems.map((item, idx) => (
+                    <div key={item.id || idx} className="relative pr-6 text-right">
+                      {/* Timeline Dot */}
+                      <div className={`absolute -right-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-950 ${item.timelineType === 'version'
+                        ? (item.type === 'bugfix' ? 'bg-red-500' : item.type === 'feature' ? 'bg-blue-500' : 'bg-emerald-500')
+                        : 'bg-slate-600'
+                        }`}></div>
+
+                      {/* Content */}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-right">
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${item.timelineType === 'version' ? 'bg-blue-900/40 text-blue-400' : 'bg-slate-800 text-slate-500'
+                            }`}>
+                            {item.version}
+                          </span>
+                          <span className={`text-sm font-bold ${item.timelineType === 'version' ? 'text-slate-200' : 'text-slate-400'}`}>
+                            {item.title}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 mb-1">{item.date}</span>
+                        <p className={`text-sm leading-relaxed p-3 rounded-lg border font-sans ${item.timelineType === 'version'
+                          ? 'text-slate-300 bg-slate-900 border-slate-800'
+                          : 'text-slate-400 bg-slate-950/50 border-slate-900'
+                          }`}>
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="pr-6 text-slate-500 text-sm italic">لا توجد تحديثات مسجلة بعد لهذا المشروع...</div>
+                  );
+                })()}
               </div>
             </div>
           </motion.div>
@@ -461,6 +615,14 @@ const ProjectDetails: React.FC = () => {
                             className="border-t border-slate-800 bg-slate-950/30 overflow-hidden"
                           >
                             <div className="p-4 space-y-4">
+                              {/* Full Content with formatting support */}
+                              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 mb-2">
+                                <h5 className="text-[10px] text-slate-500 mb-2 font-bold select-none uppercase tracking-wider">محتوى الملاحظة</h5>
+                                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
+                                  {note.content}
+                                </p>
+                              </div>
+
                               <div className="flex items-center justify-between p-3 bg-slate-900 rounded-lg border border-slate-800">
                                 <div className="flex gap-1 order-2">
                                   {(['pending', 'in_progress', 'completed'] as const).map(s => (
