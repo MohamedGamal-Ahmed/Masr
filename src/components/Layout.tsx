@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, FolderGit2, PlusSquare, BarChart2, Settings, User, Bell, Code, Info, Loader2 } from 'lucide-react';
+import { Home, FolderGit2, PlusSquare, BarChart2, Settings, User, Bell, Code, Info, Loader2, Download } from 'lucide-react';
 import { api } from '@/services/api';
 import { VersionLog } from '@/types';
 
@@ -36,6 +36,46 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    // We've used the prompt, and can't use it again, throw it away
+    setDeferredPrompt(null);
+  };
 
   useEffect(() => {
     // Attempt to load updated name from storage
@@ -158,6 +198,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span className="text-xs text-slate-500 px-4 mb-2 block font-medium">إجراءات سريعة</span>
             <NavItem to="/add-note" icon={PlusSquare} label="ملاحظة سريعة" />
             <NavItem to="/add-project" icon={FolderGit2} label="إضافة مشروع" />
+            
+            {isInstallable && (
+              <button
+                onClick={handleInstallClick}
+                className="flex flex-col md:flex-row items-center md:justify-start md:px-4 md:gap-3 w-full h-full md:h-12 transition-all duration-200 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 mt-1"
+              >
+                <Download size={22} strokeWidth={1.5} />
+                <span className="text-[10px] md:text-sm font-medium pr-1">تثبيت التطبيق</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -258,6 +308,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
             </div>
 
+            {/* Install Button for Mobile Header */}
+            {isInstallable && (
+              <button
+                onClick={handleInstallClick}
+                className="hidden md:flex ml-2 w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 hover:border-emerald-500 transition-colors text-emerald-500"
+                title="تثبيت التطبيق"
+              >
+                <Download size={16} />
+              </button>
+            )}
+
           </div>
         </header>
 
@@ -276,7 +337,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </NavLink>
           </div>
           <NavItem to="/snippets" icon={Code} label="الأكواد" />
-          <NavItem to="/about" icon={Info} label="المطور" />
+          
+          {isInstallable ? (
+            <button onClick={handleInstallClick} className="flex flex-col items-center justify-center text-emerald-500 px-2">
+              <Download size={22} strokeWidth={1.5} />
+              <span className="text-[10px] font-medium mt-1">تثبيت</span>
+            </button>
+          ) : (
+            <NavItem to="/about" icon={Info} label="المطور" />
+          )}
         </nav>
       </div>
 
