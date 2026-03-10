@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Shield, UploadCloud, CheckCircle2, AlertCircle, Loader2, X, Lock, Download, Upload, RefreshCw, AlertTriangle } from 'lucide-react';
 import { api, tokenManager } from '@/services/api';
-import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
 import toast from 'react-hot-toast';
 
 interface BackupModalProps {
@@ -130,70 +127,14 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
             const blob = await api.backup.export();
             const fileName = `masar_backup_${new Date().toISOString().split('T')[0]}.json`;
 
-            if (Capacitor.isNativePlatform()) {
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = async () => {
-                    try {
-                        const base64Data = (reader.result as string).split(',')[1];
-
-                        // Write to Documents directory (more reliable than Cache)
-                        const result = await Filesystem.writeFile({
-                            path: fileName,
-                            data: base64Data,
-                            directory: Directory.Documents,
-                        });
-
-                        try {
-                            // Attempt to share the file
-                            await Share.share({
-                                title: 'Masar Backup',
-                                text: 'نسخة احتياطية من تطبيق مسار',
-                                url: result.uri,
-                                dialogTitle: 'مشاركة النسخة الاحتياطية',
-                            });
-                        } catch (shareErr: unknown) {
-                            // Fallback: Show success message with file location
-                            console.warn('Share failed, file saved to Documents:', result.uri);
-                            toast.success(`تم حفظ النسخة الاحتياطية بنجاح!\n\nالمسار: Documents/${fileName}\n\nيمكنك العثور على الملف في تطبيق "الملفات" الخاص بجهازك.`, { duration: 6000 });
-                        }
-                    } catch (writeErr: unknown) {
-                        const writeMessage = writeErr instanceof Error ? writeErr.message : String(writeErr);
-                        console.error('Write error:', writeErr);
-                        // Fallback to Cache directory if Documents fails
-                        try {
-                            const base64Data = (reader.result as string).split(',')[1];
-                            const result = await Filesystem.writeFile({
-                                path: fileName,
-                                data: base64Data,
-                                directory: Directory.Cache,
-                            });
-                            await Share.share({
-                                title: 'Masar Backup',
-                                text: 'نسخة احتياطية من تطبيق مسار',
-                                url: result.uri,
-                                dialogTitle: 'مشاركة النسخة الاحتياطية',
-                            });
-                        } catch (fallbackErr: unknown) {
-                            const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
-                            toast.error('فشل في حفظ الملف: ' + (writeMessage || fallbackMessage || 'خطأ غير معروف'));
-                        }
-                    }
-                };
-                reader.onerror = (err) => {
-                    console.error('FileReader error:', err);
-                    toast.error('فشل في قراءة بيانات الملف');
-                };
-            } else {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             console.error('Export error:', err);
