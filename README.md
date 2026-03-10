@@ -71,7 +71,7 @@
 ### 1. تثبيت المشروع
 ```bash
 # قم بعمل استنساخ للمستودع (Clone)
-git clone https://github.com/MohamedGamal-Ahmed/Masar-App.git
+git clone https://github.com/MohamedGamal-Ahmed/Masr.git
 cd Masar-App
 
 # تثبيت الحزم (عبر npm أو yarn)
