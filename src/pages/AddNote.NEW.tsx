@@ -9,7 +9,7 @@ import { classifyNoteType } from '@/utils/noteIntelligence';
 
 const noteSchema = z.object({
   projectId: z.string().nullable(),
-  type: z.enum(['idea', 'bug', 'todo']),
+  type: z.enum(['idea', 'bug', 'todo', 'feature']),
   content: z.string().min(3, 'Please write at least 3 characters.'),
   title: z.string().optional(),
 });
@@ -17,7 +17,7 @@ const noteSchema = z.object({
 const AddNote: React.FC = () => {
   const navigate = useNavigate();
   const [selectedProject, setSelectedProject] = useState('');
-  const [noteType, setNoteType] = useState<'idea' | 'bug' | 'todo'>('idea');
+  const [noteType, setNoteType] = useState<'idea' | 'bug' | 'todo' | 'feature'>('idea');
   const [title, setTitle] = useState('');
   const [assignee, setAssignee] = useState('');
   const [mentionsInput, setMentionsInput] = useState('');

@@ -28,7 +28,7 @@ export interface ProgressUpdate {
   id: string;
   date: string;
   content: string;
-  status?: string;
+  status?: 'new' | 'pending' | 'done';
 }
 
 export interface GitHubIssue {
@@ -45,6 +45,10 @@ export interface GitHubIssueLink {
   owner: string;
   repo: string;
   number: number;
+  state?: string;
+  title?: string;
+  url?: string;
+  lastSyncedAt?: string;
 }
 
 export interface Note {
@@ -54,12 +58,12 @@ export interface Note {
   content: string;
   type: 'idea' | 'bug' | 'todo' | 'feature';
   date: string;
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed';
   progressLogs: ProgressUpdate[];
   reminder: boolean;
   assignee?: string;
   mentions?: string[];
-  githubIssue?: GitHubIssue;
+  githubIssue?: GitHubIssueLink;
 }
 
 export interface IntegrationHook {
@@ -70,6 +74,11 @@ export interface IntegrationHook {
   token?: string;
   enabled: boolean;
   createdAt: string;
+  provider?: string;
+  endpoint?: string;
+  secret?: string;
+  events?: string[];
+  lastTriggeredAt?: string;
 }
 
 export interface Snippet {

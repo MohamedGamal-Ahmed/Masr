@@ -65,9 +65,11 @@ App Version: ${appVersion}
       const created = await api.integrations.createHook({
         name: newHookName.trim(),
         provider: newHookProvider,
+        type: newHookProvider === 'slack' ? 'slack' : 'webhook',
         endpoint: newHookEndpoint.trim(),
         enabled: true,
         events: ['note_created', 'note_updated', 'note_completed', 'issue_linked'],
+        createdAt: new Date().toISOString(),
       });
       setHooks(prev => [created, ...prev]);
       setNewHookName('');

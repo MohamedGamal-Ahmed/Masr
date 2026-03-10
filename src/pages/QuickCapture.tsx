@@ -12,7 +12,7 @@ const QuickCapture: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState('');
-  const [type, setType] = useState<'idea' | 'bug' | 'todo'>('idea');
+  const [type, setType] = useState<'idea' | 'bug' | 'todo' | 'feature'>('idea');
   const [title, setTitle] = useState('');
   const [assignee, setAssignee] = useState('');
   const [mentionsInput, setMentionsInput] = useState('');
@@ -35,7 +35,7 @@ const QuickCapture: React.FC = () => {
     try {
       const draft = JSON.parse(raw) as {
         projectId: string;
-        type: 'idea' | 'bug' | 'todo';
+        type: 'idea' | 'bug' | 'todo' | 'feature';
         title: string;
         assignee?: string;
         mentionsInput?: string;
