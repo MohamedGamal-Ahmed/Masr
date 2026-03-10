@@ -5,7 +5,6 @@ import { Note, Project } from '@/types';
 import { api } from '@/services/api';
 import { NOTE_TEMPLATES } from '@/data/noteTemplates';
 import { classifyNoteType, computeNotePriority } from '@/utils/noteIntelligence';
-import toast from 'react-hot-toast';
 
 const DRAFT_KEY = 'masar_quick_capture_draft';
 
@@ -103,7 +102,7 @@ const QuickCapture: React.FC = () => {
       navigate(projectId ? `/project/${projectId}` : '/');
     } catch (error) {
       console.error('Failed to save quick capture note', error);
-      toast.error('Unable to save right now. Please try again.');
+      alert('Unable to save right now. Please try again.');
     } finally {
       setIsSaving(false);
     }

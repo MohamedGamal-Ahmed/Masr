@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Github, Shield, UploadCloud, CheckCircle2, AlertCircle, Loader2, X, Lock, Download, Upload, RefreshCw } from 'lucide-react';
-import { api } from '@/services/api';
+import { Github, Shield, UploadCloud, CheckCircle2, AlertCircle, Loader2, X, Lock, Download, Upload, RefreshCw, AlertTriangle } from 'lucide-react';
+import { api, tokenManager } from '@/services/api';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import toast from 'react-hot-toast';
 
 interface BackupModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
+
+const BACKUP_FILE_NAME = 'masar_backup.json';
 
 const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
     const [token, setToken] = useState('');
@@ -15,12 +21,29 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
     const [hasStoredToken, setHasStoredToken] = useState(false);
+    const [rememberToken, setRememberToken] = useState(false);
 
     useEffect(() => {
-        const savedToken = localStorage.getItem('github_backup_token');
-        if (savedToken) {
-            setHasStoredToken(true);
-            setToken(savedToken);
+        const enc = localStorage.getItem('masar_gh_enc');
+        if (enc) {
+            try {
+                const token = atob(enc).split('').map((c, i) =>
+                    String.fromCharCode(c.charCodeAt(0) ^ (i % 7))
+                ).join('');
+                tokenManager.setToken(token);
+                setToken(token);
+                setHasStoredToken(true);
+                setRememberToken(true);
+            } catch (e) {
+                // If decoding fails, likely corrupted data
+                localStorage.removeItem('masar_gh_enc');
+            }
+        } else {
+            const savedToken = tokenManager.getToken();
+            if (savedToken) {
+                setHasStoredToken(true);
+                setToken(savedToken);
+            }
         }
     }, [isOpen]);
 
@@ -33,7 +56,22 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
 
         try {
             const user = await api.github.getAuthenticatedUser(token);
-            localStorage.setItem('github_backup_token', token);
+            tokenManager.setToken(token);
+
+            if (rememberToken) {
+                const obfuscated = btoa(
+                    token.split('').map((c, i) =>
+                        String.fromCharCode(c.charCodeAt(0) ^ (i % 7))
+                    ).join('')
+                );
+                localStorage.setItem('masar_gh_enc', obfuscated);
+            } else {
+                localStorage.removeItem('masar_gh_enc');
+            }
+
+            // We consciously remove it from storage immediately upon connection for Option C
+            sessionStorage.removeItem('github_backup_token');
+            localStorage.removeItem('github_backup_token');
             setHasStoredToken(true);
 
             await api.github.createBackupRepo(token);
@@ -44,7 +82,7 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
             reader.onloadend = async () => {
                 const base64data = (reader.result as string).split(',')[1];
                 try {
-                    await api.github.uploadFile(token, user.login, base64data, 'masar_backup.db');
+                    await api.github.uploadFile(token, user.login, base64data, BACKUP_FILE_NAME);
                     setStatus('success');
                     setIsSyncing(false);
                 } catch (err: any) {
@@ -53,8 +91,9 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
                     setIsSyncing(false);
                 }
             };
-        } catch (err: any) {
-            setErrorMessage(err.message || 'حدث خطأ أثناء المحاولة');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            setErrorMessage(message || 'حدث خطأ أثناء المحاولة');
             setStatus('error');
             setIsSyncing(false);
         }
@@ -70,15 +109,16 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
 
         try {
             const user = await api.github.getAuthenticatedUser(token);
-            const blob = await api.github.getFile(token, user.login, 'masar_backup.db');
+            const blob = await api.github.getFile(token, user.login, BACKUP_FILE_NAME);
 
-            const file = new File([blob], 'masar_backup.db');
+            const file = new File([blob], BACKUP_FILE_NAME, { type: 'application/json' });
             await api.backup.import(file);
 
             setStatus('success');
             setTimeout(() => window.location.reload(), 2000); // Reload to reflect new DB
-        } catch (err: any) {
-            setErrorMessage(err.message || 'فشل استعادة البيانات من GitHub');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            setErrorMessage(message || 'فشل استعادة البيانات من GitHub');
             setStatus('error');
         } finally {
             setIsRestoring(false);
@@ -88,23 +128,83 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
     const handleLocalExport = async () => {
         try {
             const blob = await api.backup.export();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `masar_backup_${new Date().toISOString().split('T')[0]}.db`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (err) {
-            alert('فشل تصدير الملف');
+            const fileName = `masar_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+            if (Capacitor.isNativePlatform()) {
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    try {
+                        const base64Data = (reader.result as string).split(',')[1];
+
+                        // Write to Documents directory (more reliable than Cache)
+                        const result = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64Data,
+                            directory: Directory.Documents,
+                        });
+
+                        try {
+                            // Attempt to share the file
+                            await Share.share({
+                                title: 'Masar Backup',
+                                text: 'نسخة احتياطية من تطبيق مسار',
+                                url: result.uri,
+                                dialogTitle: 'مشاركة النسخة الاحتياطية',
+                            });
+                        } catch (shareErr: unknown) {
+                            // Fallback: Show success message with file location
+                            console.warn('Share failed, file saved to Documents:', result.uri);
+                            toast.success(`تم حفظ النسخة الاحتياطية بنجاح!\n\nالمسار: Documents/${fileName}\n\nيمكنك العثور على الملف في تطبيق "الملفات" الخاص بجهازك.`, { duration: 6000 });
+                        }
+                    } catch (writeErr: unknown) {
+                        const writeMessage = writeErr instanceof Error ? writeErr.message : String(writeErr);
+                        console.error('Write error:', writeErr);
+                        // Fallback to Cache directory if Documents fails
+                        try {
+                            const base64Data = (reader.result as string).split(',')[1];
+                            const result = await Filesystem.writeFile({
+                                path: fileName,
+                                data: base64Data,
+                                directory: Directory.Cache,
+                            });
+                            await Share.share({
+                                title: 'Masar Backup',
+                                text: 'نسخة احتياطية من تطبيق مسار',
+                                url: result.uri,
+                                dialogTitle: 'مشاركة النسخة الاحتياطية',
+                            });
+                        } catch (fallbackErr: unknown) {
+                            const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+                            toast.error('فشل في حفظ الملف: ' + (writeMessage || fallbackMessage || 'خطأ غير معروف'));
+                        }
+                    }
+                };
+                reader.onerror = (err) => {
+                    console.error('FileReader error:', err);
+                    toast.error('فشل في قراءة بيانات الملف');
+                };
+            } else {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error('Export error:', err);
+            toast.error('فشل تصدير الملف: ' + (message || err));
         }
     };
 
     const handleLocalImport = () => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.db';
+        input.accept = '.json';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -116,8 +216,9 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
                 await api.backup.import(file);
                 setStatus('success');
                 setTimeout(() => window.location.reload(), 1500);
-            } catch (err: any) {
-                setErrorMessage(err.message || 'فشل استيراد الملف');
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                setErrorMessage(message || 'فشل استيراد الملف');
                 setStatus('error');
             } finally {
                 setIsRestoring(false);
@@ -127,9 +228,13 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
     };
 
     const handleClearToken = () => {
+        tokenManager.clearToken();
+        sessionStorage.removeItem('github_backup_token');
         localStorage.removeItem('github_backup_token');
+        localStorage.removeItem('masar_gh_enc');
         setToken('');
         setHasStoredToken(false);
+        setRememberToken(false);
     };
 
     return (
@@ -185,11 +290,29 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
                                             </button>
                                         )}
                                     </div>
+                                    <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer mt-2 w-fit select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={rememberToken}
+                                            onChange={(e) => setRememberToken(e.target.checked)}
+                                            className="rounded accent-blue-500 border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500 focus:ring-opacity-25"
+                                        />
+                                        تذكرني على هذا الجهاز
+                                    </label>
+                                    {rememberToken && (
+                                        <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mt-2">
+                                            <AlertTriangle size={14} className="text-yellow-400 mt-0.5 shrink-0" />
+                                            <p className="text-xs text-yellow-300 leading-relaxed">
+                                                سيتم حفظ الـ Token بشكل مشفر على هذا الجهاز.
+                                                لا تفعّل هذا الخيار على أجهزة مشتركة أو عامة.
+                                            </p>
+                                        </div>
+                                    )}
                                     <a
                                         href="https://github.com/settings/tokens/new?description=Masar%20Backup&scopes=repo"
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="text-[10px] text-blue-500 hover:text-blue-400 block underline"
+                                        className="text-[10px] text-blue-500 hover:text-blue-400 block underline mt-2"
                                     >
                                         كيف أحصل على Token؟
                                     </a>

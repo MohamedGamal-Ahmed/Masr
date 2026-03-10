@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetails = lazy(() => import('./pages/ProjectDetails'));
 const AddNote = lazy(() => import('./pages/AddNote'));
+const QuickCapture = lazy(() => import('./pages/QuickCapture'));
 const AddProject = lazy(() => import('./pages/AddProject'));
 const Stats = lazy(() => import('./pages/Stats'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -30,7 +31,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 3000); // 3 seconds splash
+    }, 900);
     return () => clearTimeout(timer);
   }, []);
 
@@ -49,6 +50,7 @@ const App: React.FC = () => {
               <Route path="/add-project" element={<AddProject />} />
               <Route path="/project/:id" element={<ProjectDetails />} />
               <Route path="/add-note" element={<AddNote />} />
+              <Route path="/quick-capture" element={<QuickCapture />} />
               <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/profile" element={<Profile />} />

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Project } from '@/types';
 import { api } from '@/services/api';
 import { z } from 'zod';
-import toast from 'react-hot-toast';
 import { NOTE_TEMPLATES } from '@/data/noteTemplates';
 import { classifyNoteType } from '@/utils/noteIntelligence';
 
@@ -127,7 +126,7 @@ const AddNote: React.FC = () => {
       navigate('/');
     } catch (err) {
       console.error('Failed to save note:', err);
-      toast.error('Failed to save the note. Make sure the server is running.');
+      alert('Failed to save the note. Make sure the server is running.');
     } finally {
       setIsSaving(false);
     }

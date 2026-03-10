@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Filter, Code2, Folder, ExternalLink, Plus, Loader2, AlertCircle, Github, Star, GitFork, X, Check } from 'lucide-react';
+import { Search, Code2, Folder, ExternalLink, Plus, Loader2, AlertCircle, Github, Star, GitFork, X, Check } from 'lucide-react';
 import { Project } from '@/types';
 import { api, GitHubRepo } from '@/services/api';
 import { StaggerContainer, StaggerItem, ScaleHover } from '@/components/Animations';
@@ -51,7 +51,7 @@ const Projects: React.FC = () => {
         setAllProjects(data);
       } catch (err) {
         console.error('Failed to fetch projects:', err);
-        setError('تعذر تحميل المشاريع. يرجى التأكد من تشغيل السيرفر.');
+        setError('Unable to load projects. Please make sure the backend server is running.');
       } finally {
         setIsLoading(false);
       }
@@ -78,7 +78,7 @@ const Projects: React.FC = () => {
       const repos = await api.github.getRepos(githubUsername.trim());
       setGithubRepos(repos);
     } catch (err: any) {
-      setRepoError(err.message || 'فشل في جلب المستودعات');
+      setRepoError(err.message || 'Failed to fetch repositories.');
     } finally {
       setIsLoadingRepos(false);
     }
@@ -128,7 +128,7 @@ const Projects: React.FC = () => {
       setGithubRepos([]);
 
     } catch (err: any) {
-      setRepoError('فشل في استيراد بعض المستودعات');
+      setRepoError('Import failed for one or more repositories.');
     } finally {
       setIsImporting(false);
     }
@@ -138,7 +138,7 @@ const Projects: React.FC = () => {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center space-y-4">
         <Loader2 size={40} className="text-blue-500 animate-spin" />
-        <p className="text-slate-400 animate-pulse">جاري جلب مشاريعك...</p>
+        <p className="text-slate-400 animate-pulse">Loading your projects...</p>
       </div>
     );
   }
@@ -147,23 +147,21 @@ const Projects: React.FC = () => {
     return (
       <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center text-center space-y-3">
         <AlertCircle size={40} className="text-red-500" />
-        <h3 className="text-red-200 font-bold">خطأ في الاتصال</h3>
+        <h3 className="text-red-200 font-bold">Connection Error</h3>
         <p className="text-red-400/80 text-sm">{error}</p>
         <button
           onClick={() => window.location.reload()}
           className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl text-sm font-bold transition-colors"
-        >
-          إعادة المحاولة
-        </button>
+        >Add your first project</button>
       </div>
     );
   }
 
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">المشاريع البرمجية</h2>
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center mb-4">
+        <h2 className="text-2xl font-bold">Projects</h2>
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setShowGitHubModal(true)}
             className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 border border-slate-700 transition-all hover:border-slate-600"
@@ -176,26 +174,23 @@ const Projects: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-transform active:scale-95"
           >
             <Plus size={18} />
-            مشروع جديد
+            New Project
           </button>
         </div>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search */}
       <div className="flex gap-2 mb-6">
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="ابحث عن مشروع..."
+            placeholder="Search projects by name or language..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pr-10 pl-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200 placeholder-slate-500 transition-all"
           />
           <Search className="absolute right-3 top-3.5 text-slate-500" size={18} />
         </div>
-        <button className="bg-slate-900 border border-slate-800 w-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-700">
-          <Filter size={20} />
-        </button>
       </div>
 
       {/* Projects List */}
@@ -203,18 +198,15 @@ const Projects: React.FC = () => {
         <div className="space-y-4">
           {filteredProjects.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-slate-500 mb-2">لا توجد مشاريع تطابق بحثك</p>
-              <button onClick={() => navigate('/add-project')} className="text-blue-500 text-sm font-medium">أضف مشروعك الأول</button>
+              <p className="text-slate-500 mb-2">No projects match your search.</p>
+              <button onClick={() => navigate('/add-project')} className="text-blue-500 text-sm font-medium">Add your first project</button>
             </div>
           ) : (
             filteredProjects.map((project) => (
               <StaggerItem key={project.id}>
                 <ScaleHover>
                   <Link to={`/project/${project.id}`} className="block">
-                    <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 hover:border-blue-500/50 transition-all group relative overflow-hidden">
-
-                      {/* Background accent */}
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 hover:border-slate-700 transition-colors">
 
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
@@ -243,7 +235,7 @@ const Projects: React.FC = () => {
                           <Folder size={12} />
                           <span className="font-mono max-w-[150px] truncate" dir="ltr">{project.localPath || project.branch}</span>
                         </div>
-                        {project.repoUrl && project.repoUrl !== 'غير مرتبط' && (
+                        {project.repoUrl && (
                           <div className="flex items-center gap-1 text-xs text-blue-500">
                             <ExternalLink size={12} />
                             <span>GitHub</span>
@@ -274,8 +266,8 @@ const Projects: React.FC = () => {
                   <Github size={22} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white">استيراد من GitHub</h3>
-                  <p className="text-xs text-slate-500">اختر المستودعات لإضافتها لمشاريعك</p>
+                  <h3 className="font-bold text-white">Import from GitHub</h3>
+                  <p className="text-xs text-slate-500">Select repositories to add to your local project list.</p>
                 </div>
               </div>
               <button
@@ -307,7 +299,7 @@ const Projects: React.FC = () => {
                   className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-6 rounded-xl font-bold transition-colors flex items-center gap-2"
                 >
                   {isLoadingRepos ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
-                  بحث
+                  Search
                 </button>
               </div>
             </div>
@@ -329,7 +321,7 @@ const Projects: React.FC = () => {
               {!isLoadingRepos && githubRepos.length === 0 && !repoError && (
                 <div className="text-center py-10 text-slate-500">
                   <Github size={40} className="mx-auto mb-3 opacity-30" />
-                  <p>أدخل اسم المستخدم واضغط بحث لعرض المستودعات</p>
+                  <p>Enter a username and press Search to list repositories.</p>
                 </div>
               )}
 
@@ -370,7 +362,7 @@ const Projects: React.FC = () => {
             {githubRepos.length > 0 && (
               <div className="p-4 border-t border-slate-800 flex items-center justify-between">
                 <span className="text-sm text-slate-500">
-                  تم اختيار <span className="text-blue-400 font-bold">{selectedRepos.size}</span> مستودع
+                  Selected: <span className="text-blue-400 font-bold">{selectedRepos.size}</span> repo(s)
                 </span>
                 <button
                   onClick={importSelectedRepos}
@@ -378,7 +370,7 @@ const Projects: React.FC = () => {
                   className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-6 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2"
                 >
                   {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
-                  استيراد المختار
+                  Import Selected
                 </button>
               </div>
             )}
@@ -390,3 +382,21 @@ const Projects: React.FC = () => {
 };
 
 export default Projects;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
