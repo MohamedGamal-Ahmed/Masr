@@ -38,6 +38,15 @@ export interface Note {
   status: 'pending' | 'in_progress' | 'completed'; // New: Workflow status
   progressLogs: ProgressUpdate[]; // New: History of work
   reminder: boolean; // New: If true, shows in notifications
+  assignee?: string;
+  mentions?: string[];
+  githubIssue?: GitHubIssue;
+}
+
+export interface GitHubIssue {
+  html_url: string;
+  number: number;
+  state: string;
 }
 
 export interface Snippet {

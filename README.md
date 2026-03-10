@@ -57,8 +57,9 @@
 
 - **الإطار واللغة:** `React 18` و `TypeScript` لبنية قوية وخالية من أخطاء الـ Types.
 - **بناء التطبيق والتوجيه:** `Vite.js` لسرعة التحميل العالية، مع التوجيه باستخدام `React Router DOM`.
+- **الخلفية وقاعدة البيانات:** `Node.js` مع `Express` لخدمة الـ API، و `SQLite3` لتخزين البيانات محلياً بشكل دائم وموثوق.
 - **تصميم الواجهات:** `Tailwind CSS` و `Framer Motion` للحركات والتأثيرات، وأيقونات من `Lucide React`.
-- **الأداء العالي:** ذاكرة تخزين مؤقت داخلية (In-Memory Cache) لتخفيف الضغط على الـ LocalStorage، وعرض القوائم الضخمة بكفاءة عبر `react-virtuoso`.
+- **الأداء العالي:** ذاكرة تخزين مؤقت داخلية (In-Memory Cache) لتخفيف الضغط على الـ LocalStorage/Database، وعرض القوائم الضخمة بكفاءة عبر `react-virtuoso`.
 - **تطبيقات الأجهزة (Cross-platform):** يمكن تغليفه للديسكتوب والموبايل بسلاسة عن طريق دعم الـ **PWA** بالكامل، وبنية `Capacitor` المجهزة مسبقاً.
 
 ---
@@ -77,11 +78,17 @@ cd Masar-App
 npm install
 ```
 
-### 2. تشغيل بيئة التطوير (Development Server)
+### 2. تشغيل المشروع (Development)
+التطبيق يحتاج إلى تشغيل الـ Frontend والـ Backend معاً:
+
 ```bash
+# تشغيل واجهة المستخدم (Vite)
 npm run dev
+
+# في نافذة terminal أخرى، تشغيل الخادم (Node backend)
+npm run server
 ```
-وسيتم تشغيل التطبيق على الرابط `http://localhost:3000`.
+وسيتم تشغيل الواجهة على `http://localhost:3000` والخادم على `http://localhost:5000`.
 
 ### 3. بناء نسخة الإنتاج والـ PWA (Build)
 ```bash
@@ -102,20 +109,20 @@ npm run build
 
 ## 🧩 الهيكل (Folder Structure)
 
-```text
-Masar/
-├── android/             # ملفات Capacitor لتشغيل التطبيق على أندرويد
+├── backend/             # خادم Express وقاعدة بيانات SQLite
+│   ├── server.cjs       # ملف السيرفر الأساسي
+│   └── schema.sql       # هيكل قاعدة البيانات
 ├── src/
 │   ├── components/      # مكونات الواجهة المعزولة (Modals, Charts, Animations)
 │   ├── pages/           # صفحات التطبيق الأساسية (Dashboard, ProjectDetails, AddNote...)
 │   ├── services/        # الاتصال بـ GitHub API ومنسق التخزين المحلي (api.ts)
-│   ├── utils/           # الملفات المساعدة (مثل noteIntelligence.ts)
-│   ├── data/            # بيانات أو قوالب ثابتة
-│   ├── types.ts         # الأنواع والإطارات الخاصة بـ TypeScript
+│   ├── utils/           # الملفات المساعدة (مثلاً التشفير والمعالجة)
+│   ├── types.ts         # أنواع TypeScript المشتركة
 │   └── index.tsx        # مدخل التطبيق وتغليف الأخطاء (ErrorBoundary)
 ├── public/              # أيقونات وبيانات الـ PWA (Manifest)
+├── android/             # ملفات Capacitor لتشغيل التطبيق على أندرويد
+├── constants.ts         # الثوابت والبيانات التجريبية
 └── vite.config.ts       # إعدادات Vite وملحقات الـ PWA
-```
 
 ---
 
