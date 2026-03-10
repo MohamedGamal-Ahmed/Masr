@@ -63,6 +63,11 @@ const ProjectDetails: React.FC = () => {
   const [editingLogId, setEditingLogId] = useState<{ noteId: string, logId: string } | null>(null);
   const [editLogContent, setEditLogContent] = useState('');
 
+  const progress = React.useMemo(() => {
+    if (!projectNotes.length) return 0;
+    const completed = projectNotes.filter(n => n.status === 'completed').length;
+    return Math.round((completed / projectNotes.length) * 100);
+  }, [projectNotes]);
 
   // Load project and notes
   useEffect(() => {
@@ -590,11 +595,6 @@ const ProjectDetails: React.FC = () => {
     }
   };
 
-  const progress = React.useMemo(() => {
-    if (!projectNotes.length) return 0;
-    const completed = projectNotes.filter(n => n.status === 'completed').length;
-    return Math.round((completed / projectNotes.length) * 100);
-  }, [projectNotes]);
 
   return (
     <div className="space-y-6 pb-20 animate-fade-in">
