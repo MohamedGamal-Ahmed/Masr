@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Masar</string>
+    <string name="title_activity_main">Masar</string>
+    <string name="package_name">com.mo_gamal.masar</string>
+    <string name="custom_url_scheme">com.mo_gamal.masar</string>
+</resources>
