@@ -176,7 +176,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden" onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}>
+    <div className="flex h-screen w-screen max-w-[100vw] bg-slate-950 text-slate-100 overflow-hidden" onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}>
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-l border-slate-800 z-50">
@@ -217,7 +217,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </aside>
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col h-full relative">
+      <div className="flex-1 flex flex-col h-full w-full min-w-0 relative">
 
         {/* Mobile Header / Desktop Topbar */}
         <header className="flex-none p-4 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 md:bg-slate-950">
@@ -323,7 +323,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-24 md:p-8 relative scroll-smooth no-scrollbar">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-24 md:p-8 relative scroll-smooth no-scrollbar w-full max-w-full">
           {children}
         </main>
 

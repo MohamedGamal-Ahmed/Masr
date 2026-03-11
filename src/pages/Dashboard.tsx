@@ -397,7 +397,7 @@ const Dashboard: React.FC = () => {
 
       {/* GitHub Sync Status Card */}
       <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden mt-2">
-        <div className="absolute top-0 left-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform"></div>
+        <div className="absolute top-0 left-0 w-24 h-24 bg-blue-600/10 rounded-full" style={{ top: '-2.5rem', left: '-2.5rem' }}></div>
         <div className="flex justify-between items-start relative z-10">
           <div>
             <div className="flex items-center space-x-2 space-x-reverse mb-3">
