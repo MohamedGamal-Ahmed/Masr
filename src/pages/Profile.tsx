@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Briefcase, Github, Globe, Save, Camera, Smartphone } from 'lucide-react';
 
 const Profile: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [joinDate, setJoinDate] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
-    name: 'المطور محمد',
-    email: 'mgamal.ahmed@outlook.com',
-    title: 'مطور حلول برمجية',
-    bio: 'مطور برمجيات شغوف ببناء تطبيقات الويب والموبايل. أحب القهوة وكتابة الكود النظيف.',
-    github: 'mgamal-ahmed',
-    website: 'https://masar.app',
+    name: '',
+    email: '',
+    title: '',
+    bio: '',
+    github: '',
+    website: '',
     phone: ''
   });
 
@@ -19,11 +22,40 @@ const Profile: React.FC = () => {
     if (savedProfile) {
       setFormData(prev => ({ ...prev, ...JSON.parse(savedProfile) }));
     }
+
+    const savedPhoto = localStorage.getItem('masar_profile_photo');
+    if (savedPhoto) {
+      setPhotoUrl(savedPhoto);
+    }
+
+    let joinedAt = localStorage.getItem('masar_joined_at');
+    if (!joinedAt) {
+      joinedAt = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long' });
+      localStorage.setItem('masar_joined_at', joinedAt);
+    }
+    setJoinDate(joinedAt);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setPhotoUrl(base64);
+        localStorage.setItem('masar_profile_photo', base64);
+      };
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSave = () => {
@@ -49,17 +81,31 @@ const Profile: React.FC = () => {
         <div className="absolute -bottom-10 right-6 flex items-end gap-4">
           <div className="relative">
             <div className="w-24 h-24 rounded-2xl bg-slate-950 border-4 border-slate-950 flex items-center justify-center overflow-hidden shadow-xl">
-              <div className="w-full h-full bg-blue-600 flex items-center justify-center text-3xl font-bold text-white uppercase">
-                {formData.name.charAt(0)}
-              </div>
+              {photoUrl ? (
+                <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-3xl font-bold text-white uppercase">
+                  {formData.name ? formData.name.charAt(0) : '?'}
+                </div>
+              )}
             </div>
-            <button className="absolute bottom-[-5px] left-[-5px] p-2 bg-slate-800 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+            <button 
+              onClick={triggerFileInput}
+              className="absolute bottom-[-5px] left-[-5px] p-2 bg-slate-800 rounded-full border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+            >
               <Camera size={14} />
             </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handlePhotoUpload} 
+              accept="image/*" 
+              className="hidden" 
+            />
           </div>
           <div className="mb-2">
-            <h2 className="text-xl font-bold text-white">{formData.name}</h2>
-            <p className="text-sm text-slate-400">{formData.title}</p>
+            <h2 className="text-xl font-bold text-white">{formData.name || 'مستخدم جديد'}</h2>
+            <p className="text-sm text-slate-400">{formData.title || 'أضف المسمى الوظيفي'}</p>
           </div>
         </div>
       </div>
@@ -172,11 +218,11 @@ const Profile: React.FC = () => {
             <h4 className="text-sm font-bold text-slate-300 mb-2">إحصائيات العضوية</h4>
             <div className="flex justify-between text-xs text-slate-500 border-b border-slate-800/50 pb-2 mb-2">
               <span>تاريخ الانضمام</span>
-              <span className="font-mono">Oct 2023</span>
+              <span className="font-mono">{joinDate}</span>
             </div>
             <div className="flex justify-between text-xs text-slate-500">
               <span>نوع الحساب</span>
-              <span className="text-emerald-500 font-bold bg-emerald-500/10 px-2 rounded">Pro Plan</span>
+              <span className="text-slate-400 font-bold bg-slate-800/50 px-2 rounded">مجاني</span>
             </div>
           </div>
         </div>

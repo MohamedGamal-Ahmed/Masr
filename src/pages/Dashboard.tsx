@@ -66,8 +66,18 @@ const Dashboard: React.FC = () => {
   const [lastProjectId, setLastProjectId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('مطور');
 
   useEffect(() => {
+    try {
+      const profile = JSON.parse(localStorage.getItem('masar_profile') || '{}');
+      if (profile.name) {
+        setUserName(profile.name);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
@@ -193,7 +203,7 @@ const Dashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center space-y-4">
+      <div className="h-[60vh] flex flex-col items-center justify-center space-y-4 min-h-[400px]">
         <Loader2 size={40} className="text-blue-500 animate-spin" />
         <p className="text-slate-400">جاري جلب بياناتك من السيرفر...</p>
       </div>
@@ -202,7 +212,7 @@ const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center text-center space-y-3">
+      <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center text-center space-y-3 min-h-[300px] justify-center">
         <AlertCircle size={40} className="text-red-500" />
         <h3 className="text-red-200 font-bold">خطأ في الاتصال</h3>
         <p className="text-red-400/80 text-sm max-w-xs">{error}</p>
@@ -217,10 +227,10 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-h-[800px] pb-10">
       {/* Welcome Section */}
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold text-white">مرحباً، أيها المطور 👋</h2>
+        <h2 className="text-2xl font-bold text-white">مرحباً، {userName} 👋</h2>
         <p className="text-slate-400 text-sm">لديك {activeReminders.length} مهام تتطلب انتباهك اليوم.</p>
       </div>
 
@@ -244,16 +254,20 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Bug 3 fix: "تركيز اليوم" – full-width cards, project name, PriorityBadge, mobile-safe */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-slate-200">تركيز اليوم (3 مهام)</h3>
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 min-h-[220px] flex flex-col">
+        <div className="flex items-center justify-between mb-3 shrink-0">
+          <h3 className="text-sm font-bold text-slate-200">تركيز اليوم ({focusTasks.length} مهام)</h3>
           <span className="text-[10px] text-slate-500">قلل التشتت</span>
         </div>
 
         {focusTasks.length === 0 ? (
-          <p className="text-xs text-slate-500">لا توجد مهام معلقة اليوم.</p>
+          <div className="flex-1 flex flex-col justify-center">
+            <p className="text-xs text-slate-500 text-center py-4">
+              لا توجد مهام لليوم — أضف ملاحظة جديدة!
+            </p>
+          </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 flex-1 justify-start">
             {focusTasks.map(task => {
               const project = projects.find(p => p.id === task.projectId);
               return (
@@ -313,25 +327,27 @@ const Dashboard: React.FC = () => {
           <h3 className="text-sm font-bold text-slate-200">Weekly Summary</h3>
           <span className="text-[10px] text-slate-500">Last 7 days</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-start h-auto">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
             <p className="text-[10px] text-slate-500">New Notes</p>
-            <p className="text-lg font-bold text-white">{weeklySummary.notesThisWeek}</p>
+            <p className="text-lg font-bold text-white leading-tight">{weeklySummary.notesThisWeek}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
             <p className="text-[10px] text-slate-500">High Priority</p>
-            <p className="text-lg font-bold text-red-300">{weeklySummary.highPriorityCount}</p>
+            <p className="text-lg font-bold text-red-300 leading-tight">{weeklySummary.highPriorityCount}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
             <p className="text-[10px] text-slate-500">In Progress</p>
-            <p className="text-lg font-bold text-amber-300">{weeklySummary.inProgressCount}</p>
+            <p className="text-lg font-bold text-amber-300 leading-tight">{weeklySummary.inProgressCount}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
             <p className="text-[10px] text-slate-500">Top Project</p>
-            <p className="text-sm font-bold text-blue-300 truncate">{weeklySummary.topProjectName}</p>
-            {weeklySummary.topProjectCount > 0 && (
-              <p className="text-[10px] text-slate-500 mt-1">{weeklySummary.topProjectCount} notes</p>
-            )}
+            <div>
+              <p className="text-sm font-bold text-blue-300 truncate leading-tight mt-0.5">{weeklySummary.topProjectName}</p>
+              {weeklySummary.topProjectCount > 0 && (
+                <p className="text-[10px] text-slate-500 mt-1">{weeklySummary.topProjectCount} notes</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -348,26 +364,28 @@ const Dashboard: React.FC = () => {
               const project = projects.find(p => p.id === note.projectId);
               return (
                 <Link to={`/project/${note.projectId || 'general'}`} key={note.id} className="block">
-                  <div className="bg-slate-900/50 border border-amber-500/20 hover:border-amber-500/40 p-3 rounded-xl transition-all group">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] text-slate-500 font-medium mb-1 block">
-                        {project?.name || 'عام'}
-                      </span>
-                      {note.status === 'in_progress' && (
-                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                      )}
+                  <div className="bg-slate-900/50 border border-amber-500/20 hover:border-amber-500/40 p-3 rounded-xl transition-all group min-h-[100px] flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] text-slate-500 font-medium mb-1 block">
+                          {project?.name || 'عام'}
+                        </span>
+                        {note.status === 'in_progress' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-200 mb-1 group-hover:text-blue-400 transition-colors line-clamp-2">
+                        {note.title}
+                      </h4>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-200 mb-1 group-hover:text-blue-400 transition-colors">
-                      {note.title}
-                    </h4>
                     <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                      <div className="flex gap-2 items-center flex-wrap">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap">
                           {note.status === 'in_progress' ? 'جاري العمل' : 'معلق'}
                         </span>
                         <PriorityBadge priority={note.priority} />
                       </div>
-                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-slate-300" />
+                      <ArrowUpRight size={14} className="text-slate-600 group-hover:text-slate-300 shrink-0" />
                     </div>
                   </div>
                 </Link>
