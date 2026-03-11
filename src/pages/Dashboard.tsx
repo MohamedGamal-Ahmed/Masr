@@ -254,7 +254,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Bug 3 fix: "تركيز اليوم" – full-width cards, project name, PriorityBadge, mobile-safe */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 min-h-[220px] flex flex-col">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 min-h-[220px] max-h-[320px] overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between mb-3 shrink-0">
           <h3 className="text-sm font-bold text-slate-200">تركيز اليوم ({focusTasks.length} مهام)</h3>
           <span className="text-[10px] text-slate-500">قلل التشتت</span>
