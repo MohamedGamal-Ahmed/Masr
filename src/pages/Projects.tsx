@@ -77,8 +77,9 @@ const Projects: React.FC = () => {
     try {
       const repos = await api.github.getRepos(githubUsername.trim());
       setGithubRepos(repos);
-    } catch (err: any) {
-      setRepoError(err.message || 'Failed to fetch repositories.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch repositories.';
+      setRepoError(message);
     } finally {
       setIsLoadingRepos(false);
     }
@@ -127,7 +128,7 @@ const Projects: React.FC = () => {
       setSelectedRepos(new Set());
       setGithubRepos([]);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       setRepoError('Import failed for one or more repositories.');
     } finally {
       setIsImporting(false);
@@ -152,7 +153,7 @@ const Projects: React.FC = () => {
         <button
           onClick={() => window.location.reload()}
           className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl text-sm font-bold transition-colors"
-        >Add your first project</button>
+        >Retry</button>
       </div>
     );
   }
@@ -384,8 +385,6 @@ const Projects: React.FC = () => {
 };
 
 export default Projects;
-
-
 
 
 

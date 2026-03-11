@@ -7,6 +7,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Virtuoso } from 'react-virtuoso';
 import { PriorityBadge } from './QuickCapture';
+
+const filterNotesForProject = (notes: Note[], projectId: string): Note[] => {
+  if (projectId === 'general') {
+    return notes.filter(n => !n.projectId || n.projectId === 'general');
+  }
+  return notes.filter(n => n.projectId === projectId);
+};
+
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -86,7 +94,7 @@ const ProjectDetails: React.FC = () => {
             status: 'active',
             version: 'N/A'
           } as Project);
-          setProjectNotes(allNotes.filter(n => (!n.projectId || n.projectId === 'general')));
+          setProjectNotes(filterNotesForProject(allNotes, 'general'));
           setLogs([]);
           setIsLoading(false);
           return;
@@ -101,7 +109,7 @@ const ProjectDetails: React.FC = () => {
         if (foundProject) {
           setProject(foundProject);
           // Only take notes that belong to this project. Extra check to ensure it's a note (has a status field).
-          setProjectNotes(allNotes.filter(n => n.projectId === id));
+          setProjectNotes(filterNotesForProject(allNotes, id));
           setLogs(allLogs.filter(l => l.projectId === id));
           localStorage.setItem('masar_last_project_id', foundProject.id);
         } else {
@@ -370,8 +378,9 @@ const ProjectDetails: React.FC = () => {
         title: newVersionLog.title,
         version: newVersionLog.version || project?.version || 'v1.0.0',
         description: newVersionLog.description,
-        type: newVersionLog.type as any,
-      } as any);
+        type: newVersionLog.type,
+        changes: [],
+      });
 
       setLogs(prev => [created, ...prev]);
       setShowAddVersionLog(false);
@@ -568,11 +577,7 @@ const ProjectDetails: React.FC = () => {
 
       // Refresh the notes list
       const allNotes = await api.notes.getAll();
-      setProjectNotes(
-        id === 'general'
-          ? allNotes.filter(n => !n.projectId || n.projectId === 'general')
-          : allNotes.filter(n => n.projectId === id)
-      );
+      setProjectNotes(filterNotesForProject(allNotes, id ?? 'general'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       if (err instanceof Error && err.name !== 'AbortError') {
@@ -935,7 +940,7 @@ const ProjectDetails: React.FC = () => {
                       title: `Update: ${n.title}`,
                       description: p.content,
                       version: n.status === 'completed' ? 'Done' : 'Update',
-                      type: (n.type === 'bug' ? 'bugfix' : 'feature') as any,
+                      type: n.type === 'bug' ? 'bugfix' : 'feature',
                       timelineType: 'note' as const
                     })))
                   ].sort((a, b) => {
@@ -1357,4 +1362,3 @@ const ProjectDetails: React.FC = () => {
 };
 
 export default ProjectDetails;
-
