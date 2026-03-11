@@ -658,6 +658,39 @@ export const api = {
             };
         },
 
+        closeIssue: async (
+            token: string,
+            owner: string,
+            repo: string,
+            issueNumber: number,
+            reason: 'completed' | 'not_planned' = 'completed'
+        ): Promise<void> => {
+            await githubRequest<GitHubIssueResponse>(
+                token,
+                `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+                {
+                    method: 'PATCH',
+                    body: JSON.stringify({ state: 'closed', state_reason: reason }),
+                }
+            );
+        },
+
+        reopenIssue: async (
+            token: string,
+            owner: string,
+            repo: string,
+            issueNumber: number
+        ): Promise<void> => {
+            await githubRequest<GitHubIssueResponse>(
+                token,
+                `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+                {
+                    method: 'PATCH',
+                    body: JSON.stringify({ state: 'open' }),
+                }
+            );
+        },
+
         syncLinkedIssues: async (token: string, signal?: AbortSignal): Promise<{ updated: number }> => {
             if (syncLocks.has('sync-linked')) throw new Error('Sync already in progress!');
             syncLocks.add('sync-linked');

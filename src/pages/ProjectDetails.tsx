@@ -169,6 +169,39 @@ const ProjectDetails: React.FC = () => {
     try {
       await api.notes.update(noteId, { status: newStatus });
       setProjectNotes(prev => prev.map(n => n.id === noteId ? { ...n, status: newStatus } : n));
+
+      // NEW: sync to GitHub if issue is linked
+      const note = projectNotes.find(n => n.id === noteId);
+      if (!note?.githubIssue) return;
+
+      const token = tokenManager.getToken();
+      if (!token) return; // silent — user may not have token
+
+      const { owner, repo, number } = note.githubIssue;
+
+      try {
+        if (newStatus === 'completed') {
+          await api.github.closeIssue(token, owner, repo, number, 'completed');
+          // update local githubIssue state too
+          setProjectNotes(prev => prev.map(n =>
+            n.id === noteId
+              ? { ...n, githubIssue: n.githubIssue ? { ...n.githubIssue, state: 'closed' } : undefined }
+              : n
+          ));
+          toast.success('تم إغلاق الـ Issue على GitHub ✓');
+        } else {
+          await api.github.reopenIssue(token, owner, repo, number);
+          setProjectNotes(prev => prev.map(n =>
+            n.id === noteId
+              ? { ...n, githubIssue: n.githubIssue ? { ...n.githubIssue, state: 'open' } : undefined }
+              : n
+          ));
+          toast.success('تم إعادة فتح الـ Issue على GitHub ✓');
+        }
+      } catch {
+        // non-critical: note is saved, GitHub sync failed
+        toast.error('تعذّر تحديث الـ Issue على GitHub');
+      }
     } catch (err) {
       console.error('Failed to update status:', err);
       toast.error('Failed to update task status');
@@ -1107,7 +1140,7 @@ const ProjectDetails: React.FC = () => {
                                       <span className="text-xs text-slate-400">GitHub Issue</span>
                                       {note.githubIssue ? (
                                         <span className={`text-[10px] px-2 py-0.5 rounded border ${note.githubIssue.state === 'open' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                                          #{note.githubIssue.number} {note.githubIssue.state}
+                                          {note.githubIssue.state} #{note.githubIssue.number}
                                         </span>
                                       ) : (
                                         <span className="text-[10px] px-2 py-0.5 rounded border bg-slate-800 text-slate-500 border-slate-700">
