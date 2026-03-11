@@ -227,7 +227,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in min-h-[800px] pb-10">
+    <div className="space-y-6 animate-fade-in pb-24">
       {/* Welcome Section */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold text-white">مرحباً، {userName} 👋</h2>
@@ -267,13 +267,13 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 flex-1 justify-start">
+          <div className="flex flex-col gap-3 overflow-y-auto pr-1">
             {focusTasks.map(task => {
               const project = projects.find(p => p.id === task.projectId);
               return (
                 <div
                   key={task.id}
-                  className="w-full flex items-start justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-3"
+                  className="w-full flex items-start justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-3 shrink-0"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-slate-200 truncate">{task.title}</p>
@@ -327,25 +327,25 @@ const Dashboard: React.FC = () => {
           <h3 className="text-sm font-bold text-slate-200">Weekly Summary</h3>
           <span className="text-[10px] text-slate-500">Last 7 days</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-start h-auto">
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
-            <p className="text-[10px] text-slate-500">New Notes</p>
-            <p className="text-lg font-bold text-white leading-tight">{weeklySummary.notesThisWeek}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
+            <p className="text-[10px] text-slate-500 mb-1">New Notes</p>
+            <p className="text-xl font-bold text-white leading-none">{weeklySummary.notesThisWeek}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
-            <p className="text-[10px] text-slate-500">High Priority</p>
-            <p className="text-lg font-bold text-red-300 leading-tight">{weeklySummary.highPriorityCount}</p>
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
+            <p className="text-[10px] text-slate-500 mb-1">High Priority</p>
+            <p className="text-xl font-bold text-red-400 leading-none">{weeklySummary.highPriorityCount}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
-            <p className="text-[10px] text-slate-500">In Progress</p>
-            <p className="text-lg font-bold text-amber-300 leading-tight">{weeklySummary.inProgressCount}</p>
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
+            <p className="text-[10px] text-slate-500 mb-1">In Progress</p>
+            <p className="text-xl font-bold text-amber-400 leading-none">{weeklySummary.inProgressCount}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 min-h-[80px] flex flex-col justify-between">
-            <p className="text-[10px] text-slate-500">Top Project</p>
-            <div>
-              <p className="text-sm font-bold text-blue-300 truncate leading-tight mt-0.5">{weeklySummary.topProjectName}</p>
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
+            <p className="text-[10px] text-slate-500 mb-1">Top Project</p>
+            <div className="flex flex-col">
+              <p className="text-sm font-bold text-blue-400 truncate leading-tight">{weeklySummary.topProjectName}</p>
               {weeklySummary.topProjectCount > 0 && (
-                <p className="text-[10px] text-slate-500 mt-1">{weeklySummary.topProjectCount} notes</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">{weeklySummary.topProjectCount} notes</p>
               )}
             </div>
           </div>
