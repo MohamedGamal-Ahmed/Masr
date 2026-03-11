@@ -39,6 +39,19 @@ const ProjectDetails: React.FC = () => {
   const [isSyncingIssues, setIsSyncingIssues] = useState(false);
   const syncAbortControllerRef = React.useRef<AbortController | null>(null);
 
+  const [closeMenuOpenId, setCloseMenuOpenId] = useState<string | null>(null);
+  const closeMenuRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (closeMenuRef.current && !closeMenuRef.current.contains(event.target as Node)) {
+        setCloseMenuOpenId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (syncAbortControllerRef.current) {
@@ -483,32 +496,74 @@ const ProjectDetails: React.FC = () => {
   };
 
   const handleCreateIssue = async (note: Note) => {
+    const currentNote = projectNotes.find(n => n.id === note.id) || note;
     if (!project || id === 'general') return;
+
     const token = getGitHubToken();
     if (!token) {
-      toast.error('Please add a GitHub token from Settings first.');
+      toast.error('يرجى إضافة GitHub Token من الإعدادات');
+      return;
+    }
+
+    if (!project.repoUrl) {
+      toast.error('يرجى إضافة رابط الريبو في Project Details');
       return;
     }
 
     const repoInfo = parseGitHubRepo(project.repoUrl);
     if (!repoInfo) {
-      toast.error('The project GitHub URL is invalid.');
+      toast.error('رابط الريبو غير صحيح');
+      return;
+    }
+
+    setIssueActionNoteId(currentNote.id);
+    try {
+      const issue = await api.github.createIssue(token, repoInfo.owner, repoInfo.repo, {
+        title: currentNote.title || `Masar ${currentNote.type}: ${project.name}`,
+        body: buildIssueBody(currentNote, project),
+        labels: [currentNote.type],
+      });
+
+      await api.notes.update(currentNote.id, { githubIssue: issue });
+      setProjectNotes(prev => prev.map(n => 
+        n.id === currentNote.id ? { ...n, githubIssue: issue } : n
+      ));
+    } catch (err: unknown) {
+      console.error('Failed to create GitHub issue:', err);
+      toast.error(err instanceof Error ? err.message : 'تعذّر إنشاء الـ Issue');
+    } finally {
+      setIssueActionNoteId(null);
+    }
+  };
+
+  const handleCloseIssueWithReason = async (note: Note, reason: 'completed' | 'not_planned', reasonLabel: string) => {
+    if (!note.githubIssue) return;
+    const token = getGitHubToken();
+    if (!token) {
+      toast.error('يرجى إضافة GitHub Token من الإعدادات');
       return;
     }
 
     setIssueActionNoteId(note.id);
+    setCloseMenuOpenId(null);
     try {
-      const issue = await api.github.createIssue(token, repoInfo.owner, repoInfo.repo, {
-        title: note.title || `Masar ${note.type}: ${project.name}`,
-        body: buildIssueBody(note, project),
-        labels: [note.type],
-      });
-
-      await api.notes.update(note.id, { githubIssue: issue });
-      updateNoteLocally(note.id, current => ({ ...current, githubIssue: issue }));
-    } catch (err) {
-      console.error('Failed to create GitHub issue:', err);
-      toast.error('Could not create GitHub Issue.');
+      await api.github.closeIssue(
+        token,
+        note.githubIssue.owner,
+        note.githubIssue.repo,
+        note.githubIssue.number,
+        reason
+      );
+      
+      const updatedIssue = { ...note.githubIssue, state: 'closed' as const };
+      await api.notes.update(note.id, { githubIssue: updatedIssue });
+      setProjectNotes(prev => prev.map(n => 
+        n.id === note.id ? { ...n, githubIssue: updatedIssue } : n
+      ));
+      toast.success(reasonLabel);
+    } catch (err: unknown) {
+      console.error('Failed to close GitHub issue:', err);
+      toast.error('تعذّر إغلاق الـ Issue');
     } finally {
       setIssueActionNoteId(null);
     }
@@ -1176,13 +1231,55 @@ const ProjectDetails: React.FC = () => {
                                           >
                                             <RefreshCw size={12} /> Sync
                                           </button>
-                                          <button
-                                            onClick={() => handleToggleIssueState(note)}
-                                            disabled={issueActionNoteId === note.id}
-                                            className={`text-[10px] px-2.5 py-1.5 rounded border disabled:opacity-50 ${note.githubIssue.state === 'open' ? 'bg-red-500/10 text-red-300 border-red-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}
-                                          >
-                                            {note.githubIssue.state === 'open' ? 'Close Issue' : 'Reopen Issue'}
-                                          </button>
+                                          {note.githubIssue.state === 'closed' ? (
+                                            <button
+                                              onClick={() => handleToggleIssueState(note)}
+                                              disabled={issueActionNoteId === note.id}
+                                              className="text-[10px] px-2.5 py-1.5 rounded border disabled:opacity-50 bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                                            >
+                                              Reopen Issue
+                                            </button>
+                                          ) : (
+                                            <div className="relative" ref={closeMenuOpenId === note.id ? closeMenuRef : null}>
+                                              <button
+                                                onClick={() => setCloseMenuOpenId(closeMenuOpenId === note.id ? null : note.id)}
+                                                disabled={issueActionNoteId === note.id}
+                                                className="text-[10px] px-2.5 py-1.5 rounded border disabled:opacity-50 bg-red-500/10 text-red-300 border-red-500/30 flex items-center gap-1"
+                                              >
+                                                {issueActionNoteId === note.id ? '...' : 'إغلاق الـ Issue ▾'}
+                                              </button>
+                                              <AnimatePresence>
+                                                {closeMenuOpenId === note.id && (
+                                                  <motion.div
+                                                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                                                    transition={{ duration: 0.1 }}
+                                                    className="absolute top-full mt-1 right-0 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-20 overflow-hidden divide-y divide-slate-700/50"
+                                                  >
+                                                    <button
+                                                      onClick={() => handleCloseIssueWithReason(note, 'completed', '✅ مكتمل')}
+                                                      className="w-full text-right px-3 py-2 text-xs text-emerald-400 hover:bg-slate-700 transition-colors"
+                                                    >
+                                                      ✅ مكتمل
+                                                    </button>
+                                                    <button
+                                                      onClick={() => handleCloseIssueWithReason(note, 'not_planned', '⊘ غير مخطط')}
+                                                      className="w-full text-right px-3 py-2 text-xs text-slate-400 hover:bg-slate-700 transition-colors"
+                                                    >
+                                                      ⊘ غير مخطط
+                                                    </button>
+                                                    <button
+                                                      onClick={() => handleCloseIssueWithReason(note, 'not_planned', '⊘ مكرر')}
+                                                      className="w-full text-right px-3 py-2 text-xs text-slate-400 hover:bg-slate-700 transition-colors"
+                                                    >
+                                                      ⊘ مكرر
+                                                    </button>
+                                                  </motion.div>
+                                                )}
+                                              </AnimatePresence>
+                                            </div>
+                                          )}
                                         </>
                                       )}
                                     </div>
