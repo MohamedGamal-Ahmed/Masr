@@ -205,32 +205,34 @@ const Projects: React.FC = () => {
             filteredProjects.map((project) => (
               <StaggerItem key={project.id}>
                 <ScaleHover>
-                  <Link to={`/project/${project.id}`} className="block">
-                    <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 hover:border-slate-700 transition-colors">
-
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
-                            {getLanguageIcon(project.language)}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-slate-100">{project.name}</h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 border border-slate-700/50">{project.language}</span>
-                              <span className="text-[10px] text-slate-500">{project.lastUpdate}</span>
+                  <Link to={`/project/${project.id}`} className="block h-full">
+                    <div className="bg-slate-900 rounded-xl p-5 border border-slate-800 hover:border-slate-700 transition-colors h-full min-h-[160px] flex flex-col justify-between">
+                      
+                      <div>
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
+                              {getLanguageIcon(project.language)}
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-100">{project.name}</h3>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] bg-slate-800 px-1.5 rounded text-slate-400 border border-slate-700/50">{project.language}</span>
+                                <span className="text-[10px] text-slate-500">{project.lastUpdate}</span>
+                              </div>
                             </div>
                           </div>
+                          <span className={`text-xs px-2 py-1 rounded-full border ${project.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+                            {project.version}
+                          </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full border ${project.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
-                          {project.version}
-                        </span>
+
+                        <p className="text-sm text-slate-400 mb-4 line-clamp-2 pl-2 border-l-2 border-slate-800 ml-1">
+                          {project.description}
+                        </p>
                       </div>
 
-                      <p className="text-sm text-slate-400 mb-4 line-clamp-2 pl-2 border-l-2 border-slate-800 ml-1">
-                        {project.description}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-800/50 mt-auto">
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           <Folder size={12} />
                           <span className="font-mono max-w-[150px] truncate" dir="ltr">{project.localPath || project.branch}</span>

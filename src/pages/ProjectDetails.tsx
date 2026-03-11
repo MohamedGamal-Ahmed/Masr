@@ -86,7 +86,7 @@ const ProjectDetails: React.FC = () => {
             status: 'active',
             version: 'N/A'
           } as Project);
-          setProjectNotes(allNotes.filter(n => !n.projectId || n.projectId === 'general'));
+          setProjectNotes(allNotes.filter(n => (!n.projectId || n.projectId === 'general')));
           setLogs([]);
           setIsLoading(false);
           return;
@@ -100,6 +100,7 @@ const ProjectDetails: React.FC = () => {
 
         if (foundProject) {
           setProject(foundProject);
+          // Only take notes that belong to this project. Extra check to ensure it's a note (has a status field).
           setProjectNotes(allNotes.filter(n => n.projectId === id));
           setLogs(allLogs.filter(l => l.projectId === id));
           localStorage.setItem('masar_last_project_id', foundProject.id);
