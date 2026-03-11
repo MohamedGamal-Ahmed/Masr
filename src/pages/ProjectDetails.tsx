@@ -166,18 +166,21 @@ const ProjectDetails: React.FC = () => {
   }
 
   const handleStatusChange = async (noteId: string, newStatus: Note['status']) => {
+    // Find note BEFORE any state updates (React state is async)
+    const note = projectNotes.find(n => n.id === noteId);
+
     try {
       await api.notes.update(noteId, { status: newStatus });
       setProjectNotes(prev => prev.map(n => n.id === noteId ? { ...n, status: newStatus } : n));
 
-      // NEW: sync to GitHub if issue is linked
-      const note = projectNotes.find(n => n.id === noteId);
+      // Sync to GitHub if issue is linked
       if (!note?.githubIssue) return;
 
       const token = tokenManager.getToken();
       if (!token) return; // silent — user may not have token
 
       const { owner, repo, number } = note.githubIssue;
+      if (!owner || !repo || !number) return;
 
       try {
         if (newStatus === 'completed') {
@@ -185,7 +188,7 @@ const ProjectDetails: React.FC = () => {
           // update local githubIssue state too
           setProjectNotes(prev => prev.map(n =>
             n.id === noteId
-              ? { ...n, githubIssue: n.githubIssue ? { ...n.githubIssue, state: 'closed' } : undefined }
+              ? { ...n, githubIssue: { ...n.githubIssue!, state: 'closed' } }
               : n
           ));
           toast.success('تم إغلاق الـ Issue على GitHub ✓');
@@ -193,7 +196,7 @@ const ProjectDetails: React.FC = () => {
           await api.github.reopenIssue(token, owner, repo, number);
           setProjectNotes(prev => prev.map(n =>
             n.id === noteId
-              ? { ...n, githubIssue: n.githubIssue ? { ...n.githubIssue, state: 'open' } : undefined }
+              ? { ...n, githubIssue: { ...n.githubIssue!, state: 'open' } }
               : n
           ));
           toast.success('تم إعادة فتح الـ Issue على GitHub ✓');
