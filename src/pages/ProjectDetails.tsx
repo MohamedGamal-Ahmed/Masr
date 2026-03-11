@@ -305,6 +305,24 @@ const ProjectDetails: React.FC = () => {
         return n;
       }));
       setNewLogContent('');
+
+      if (note.githubIssue) {
+        const token = tokenManager.getToken();
+        if (token) {
+          try {
+            await api.github.addComment(
+              token,
+              note.githubIssue.owner,
+              note.githubIssue.repo,
+              note.githubIssue.number,
+              `📝 **Progress Log**\n\n${newLogContent}`
+            );
+          } catch {
+            // non-critical — log is saved locally
+            toast.error('تعذّر إضافة التعليق على GitHub');
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to add progress log:', err);
       toast.error('Failed to add progress log');
@@ -1164,6 +1182,30 @@ const ProjectDetails: React.FC = () => {
                                 {note.type === 'idea' && <Clock size={16} className="text-blue-500" />}
                                 {note.type === 'todo' && <CheckCircle2 size={16} className="text-emerald-500" />}
                               </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-1.5">
+                              {!note.githubIssue && project?.repoUrl && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleCreateIssue(note); }}
+                                  disabled={issueActionNoteId === note.id}
+                                  className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                                >
+                                  <Github size={10} />
+                                  {issueActionNoteId === note.id ? '...' : 'ربط بـ GitHub'}
+                                </button>
+                              )}
+
+                              {note.githubIssue && (
+                                <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border ${
+                                  note.githubIssue.state === 'open'
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                                    : 'border-slate-600 bg-slate-800 text-slate-400'
+                                }`}>
+                                  <Github size={10} />
+                                  {note.githubIssue.state} #{note.githubIssue.number}
+                                </span>
+                              )}
                             </div>
                           </div>
 

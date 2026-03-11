@@ -691,6 +691,23 @@ export const api = {
             );
         },
 
+        addComment: async (
+            token: string,
+            owner: string,
+            repo: string,
+            issueNumber: number,
+            body: string
+        ): Promise<void> => {
+            await githubRequest<{ id: number }>(
+                token,
+                `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ body }),
+                }
+            );
+        },
+
         syncLinkedIssues: async (token: string, signal?: AbortSignal): Promise<{ updated: number }> => {
             if (syncLocks.has('sync-linked')) throw new Error('Sync already in progress!');
             syncLocks.add('sync-linked');
