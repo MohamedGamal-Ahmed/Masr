@@ -227,7 +227,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in pb-24">
+    <div className="space-y-6 animate-fade-in pb-24 overflow-hidden">
       {/* Welcome Section */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold text-white">مرحباً، {userName} 👋</h2>
@@ -254,7 +254,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Bug 3 fix: "تركيز اليوم" – full-width cards, project name, PriorityBadge, mobile-safe */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col min-h-[120px] max-h-[280px]">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col min-h-[120px] max-h-[280px] overflow-hidden">
         <div className="flex items-center justify-between mb-3 shrink-0">
           <h3 className="text-sm font-bold text-slate-200">تركيز اليوم ({focusTasks.length} مهام)</h3>
           <span className="text-[10px] text-slate-500">قلل التشتت</span>
@@ -273,16 +273,16 @@ const Dashboard: React.FC = () => {
               return (
                 <div
                   key={task.id}
-                  className="w-full flex items-start justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-3 shrink-0"
+                  className="w-full flex items-start justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-3 shrink-0 overflow-hidden"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-slate-200 truncate">{task.title}</p>
                     {/* Bug 3a: project name below task title */}
                     <p className="text-xs text-slate-500 mt-0.5">{project?.name ?? 'عام'}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                       {/* Bug 3c: priority badge on each card */}
                       <PriorityBadge priority={task.priority} />
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${computeNotePriority(task).level === 'high'
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded border whitespace-nowrap ${computeNotePriority(task).level === 'high'
                         ? 'border-red-500/40 text-red-300 bg-red-500/10'
                         : computeNotePriority(task).level === 'medium'
                           ? 'border-amber-500/40 text-amber-300 bg-amber-500/10'
@@ -290,7 +290,7 @@ const Dashboard: React.FC = () => {
                         }`}>
                         {computeNotePriority(task).level}
                       </span>
-                      <p className="text-[10px] text-slate-500">{task.status === 'in_progress' ? 'جاري العمل' : 'معلقة'}</p>
+                      <p className="text-[10px] text-slate-500 whitespace-nowrap">{task.status === 'in_progress' ? 'جاري العمل' : 'معلقة'}</p>
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 mt-0.5">
@@ -322,30 +322,30 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-hidden">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-slate-200">Weekly Summary</h3>
-          <span className="text-[10px] text-slate-500">Last 7 days</span>
+          <h3 className="text-sm font-bold text-slate-200 truncate">Weekly Summary</h3>
+          <span className="text-[10px] text-slate-500 whitespace-nowrap ml-2">Last 7 days</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
-            <p className="text-[10px] text-slate-500 mb-1">New Notes</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px] overflow-hidden">
+            <p className="text-[10px] text-slate-500 mb-1 truncate">New Notes</p>
             <p className="text-xl font-bold text-white leading-none">{weeklySummary.notesThisWeek}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
-            <p className="text-[10px] text-slate-500 mb-1">High Priority</p>
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px] overflow-hidden">
+            <p className="text-[10px] text-slate-500 mb-1 truncate">High Priority</p>
             <p className="text-xl font-bold text-red-400 leading-none">{weeklySummary.highPriorityCount}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
-            <p className="text-[10px] text-slate-500 mb-1">In Progress</p>
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px] overflow-hidden">
+            <p className="text-[10px] text-slate-500 mb-1 truncate">In Progress</p>
             <p className="text-xl font-bold text-amber-400 leading-none">{weeklySummary.inProgressCount}</p>
           </div>
-          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px]">
-            <p className="text-[10px] text-slate-500 mb-1">Top Project</p>
-            <div className="flex flex-col">
+          <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 flex flex-col justify-center min-h-[84px] overflow-hidden">
+            <p className="text-[10px] text-slate-500 mb-1 truncate">Top Project</p>
+            <div className="flex flex-col min-w-0">
               <p className="text-sm font-bold text-blue-400 truncate leading-tight">{weeklySummary.topProjectName}</p>
               {weeklySummary.topProjectCount > 0 && (
-                <p className="text-[10px] text-slate-500 mt-0.5">{weeklySummary.topProjectCount} notes</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 truncate">{weeklySummary.topProjectCount} notes</p>
               )}
             </div>
           </div>
@@ -364,7 +364,7 @@ const Dashboard: React.FC = () => {
               const project = projects.find(p => p.id === note.projectId);
               return (
                 <Link to={`/project/${note.projectId || 'general'}`} key={note.id} className="block">
-                  <div className="bg-slate-900/50 border border-amber-500/20 hover:border-amber-500/40 p-3 rounded-xl transition-all group min-h-[100px] flex flex-col justify-between">
+                  <div className="bg-slate-900/50 border border-amber-500/20 hover:border-amber-500/40 p-3 rounded-xl transition-all group min-h-[100px] flex flex-col justify-between overflow-hidden">
                     <div>
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] text-slate-500 font-medium mb-1 block">
