@@ -6,7 +6,7 @@ import { api, tokenManager } from '@/services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Virtuoso } from 'react-virtuoso';
-
+import { PriorityBadge } from './QuickCapture';
 const ProjectDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -407,9 +407,13 @@ const ProjectDetails: React.FC = () => {
     if (!repoUrl) return null;
     try {
       const normalized = repoUrl.trim().replace(/\.git$/, '');
+      // Try full URL first
       const match = normalized.match(/github\.com[:/]+([^/]+)\/([^/]+)/i);
-      if (!match) return null;
-      return { owner: match[1], repo: match[2] };
+      if (match) return { owner: match[1], repo: match[2] };
+      // Try short 'owner/repo' format
+      const shortMatch = normalized.match(/^([^/]+)\/([^/]+)$/);
+      if (shortMatch) return { owner: shortMatch[1], repo: shortMatch[2] };
+      return null;
     } catch {
       return null;
     }
@@ -531,6 +535,18 @@ const ProjectDetails: React.FC = () => {
     }
     const abortController = new AbortController();
     syncAbortControllerRef.current = abortController;
+
+    if (id !== 'general') {
+      if (!project?.repoUrl) {
+        toast.error('لا يوجد رابط مستودع GitHub لهذا المشروع.');
+        return;
+      }
+      const repoInfo = parseGitHubRepo(project.repoUrl);
+      if (!repoInfo) {
+        toast.error('رابط مستودع GitHub غير صالح أو مفقود. (Invalid repository format)');
+        return;
+      }
+    }
 
     setIsSyncingIssues(true);
     try {
@@ -1029,11 +1045,14 @@ const ProjectDetails: React.FC = () => {
                           {/* Note Header (Clickable) */}
                           <div className="p-4 cursor-pointer" onClick={() => setExpandedNoteId(isExpanded ? null : note.id)}>
                             <div className="flex justify-between items-start mb-2">
-                              <div className={`px-2 py-0.5 text-[10px] rounded border ${note.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
-                                note.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                  'bg-slate-800 text-slate-400 border-slate-700'
-                                }`}>
-                                {note.status === 'in_progress' ? 'In Progress' : note.status === 'completed' ? 'Completed' : 'Pending'}
+                              <div className="flex items-center gap-2">
+                                <PriorityBadge priority={note.priority} />
+                                <div className={`px-2 py-0.5 text-[10px] rounded border ${note.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                  note.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                    'bg-slate-800 text-slate-400 border-slate-700'
+                                  }`}>
+                                  {note.status === 'in_progress' ? 'In Progress' : note.status === 'completed' ? 'Completed' : 'Pending'}
+                                </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button

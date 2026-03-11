@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Github, Shield, UploadCloud, CheckCircle2, AlertCircle, Loader2, X, Lock, Download, Upload, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Github, Shield, UploadCloud, CheckCircle2, AlertCircle, Loader2, X, Lock, Download, Upload, RefreshCw, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { api, tokenManager } from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -19,6 +19,8 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
     const [errorMessage, setErrorMessage] = useState('');
     const [hasStoredToken, setHasStoredToken] = useState(false);
     const [rememberToken, setRememberToken] = useState(false);
+    const [showToken, setShowToken] = useState(false);
+    const [isEditingToken, setIsEditingToken] = useState(false);
 
     useEffect(() => {
         const enc = localStorage.getItem('masar_gh_enc');
@@ -176,6 +178,7 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
         setToken('');
         setHasStoredToken(false);
         setRememberToken(false);
+        setIsEditingToken(false);
     };
 
     return (
@@ -215,21 +218,50 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
                                         GitHub Personal Access Token <Lock size={10} />
                                     </label>
                                     <div className="relative">
-                                        <input
-                                            type="password"
-                                            value={token}
-                                            onChange={(e) => setToken(e.target.value)}
-                                            placeholder="ghp_xxxxxxxxxxxx"
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none focus:border-blue-500 transition-colors"
-                                        />
-                                        {hasStoredToken && (
+                                    {hasStoredToken && !isEditingToken ? (
+                                        <div className="flex items-center justify-between w-full bg-slate-900 border border-emerald-500/30 rounded-xl px-4 py-2.5 text-xs font-mono text-emerald-400">
+                                            <span>ghp_••••••••••••••••</span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setIsEditingToken(true)}
+                                                    className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition-colors"
+                                                >
+                                                    تغيير
+                                                </button>
+                                                <button
+                                                    onClick={handleClearToken}
+                                                    className="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/20 transition-colors"
+                                                >
+                                                    مسح
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <input
+                                                type={showToken ? "text" : "password"}
+                                                value={token}
+                                                onChange={(e) => setToken(e.target.value)}
+                                                placeholder="ghp_xxxxxxxxxxxx"
+                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none focus:border-blue-500 transition-colors pr-10"
+                                            />
                                             <button
-                                                onClick={handleClearToken}
-                                                className="absolute left-2 top-2 text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/20 transition-colors"
+                                                type="button"
+                                                onClick={() => setShowToken(!showToken)}
+                                                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                                             >
-                                                مسح
+                                                {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
                                             </button>
-                                        )}
+                                            {hasStoredToken && (
+                                                <button
+                                                    onClick={handleClearToken}
+                                                    className="absolute left-10 top-1.5 text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/20 transition-colors ml-2"
+                                                >
+                                                    مسح
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
                                     </div>
                                     <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer mt-2 w-fit select-none">
                                         <input
@@ -249,14 +281,17 @@ const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => {
                                             </p>
                                         </div>
                                     )}
-                                    <a
-                                        href="https://github.com/settings/tokens/new?description=Masar%20Backup&scopes=repo"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-[10px] text-blue-500 hover:text-blue-400 block underline mt-2"
-                                    >
-                                        كيف أحصل على Token؟
-                                    </a>
+                                    <div className="flex items-center justify-between mt-2">
+                                        <a
+                                            href="https://github.com/settings/tokens/new?description=Masar%20Backup&scopes=repo,read:user"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-[10px] text-blue-500 hover:text-blue-400 underline block"
+                                        >
+                                            كيف أحصل على Token؟
+                                        </a>
+                                        <span className="text-[10px] text-slate-500">يحتاج صلاحيات: repo, read:user</span>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">

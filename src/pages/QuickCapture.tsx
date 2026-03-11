@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Clock3, Rocket, Save } from 'lucide-react';
+import { CheckCircle2, Clock3, Eye, EyeOff, Rocket, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Note, Project } from '@/types';
 import { api } from '@/services/api';
@@ -7,6 +7,31 @@ import { NOTE_TEMPLATES } from '@/data/noteTemplates';
 import { classifyNoteType, computeNotePriority } from '@/utils/noteIntelligence';
 
 const DRAFT_KEY = 'masar_quick_capture_draft';
+
+// ── PriorityBadge ─────────────────────────────────────────────────────────────
+const PriorityBadge = ({ priority }: { priority?: string }) => {
+  const config = {
+    critical: {
+      label: 'حرج',
+      cls: 'bg-red-500/20 text-red-400 border border-red-500/30',
+    },
+    medium: {
+      label: 'متوسط',
+      cls: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
+    },
+    normal: {
+      label: 'عادي',
+      cls: 'bg-slate-500/20 text-slate-400 border border-slate-500/30',
+    },
+  };
+  const p = priority ?? 'normal';
+  const c = config[p as keyof typeof config] ?? config.normal;
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full ${c.cls}`}>{c.label}</span>
+  );
+};
+
+export { PriorityBadge };
 
 const QuickCapture: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +42,7 @@ const QuickCapture: React.FC = () => {
   const [assignee, setAssignee] = useState('');
   const [mentionsInput, setMentionsInput] = useState('');
   const [content, setContent] = useState('');
+  const [priority, setPriority] = useState<'critical' | 'medium' | 'normal'>('normal');
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [isTypeManual, setIsTypeManual] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -40,6 +66,7 @@ const QuickCapture: React.FC = () => {
         assignee?: string;
         mentionsInput?: string;
         content: string;
+        priority?: 'critical' | 'medium' | 'normal';
       };
       setProjectId(draft.projectId || '');
       setType(draft.type || 'idea');
@@ -47,6 +74,7 @@ const QuickCapture: React.FC = () => {
       setAssignee(draft.assignee || '');
       setMentionsInput(draft.mentionsInput || '');
       setContent(draft.content || '');
+      setPriority(draft.priority || 'normal');
     } catch {
       // ignore malformed draft
     }
@@ -62,24 +90,22 @@ const QuickCapture: React.FC = () => {
         assignee,
         mentionsInput,
         content,
+        priority,
       })
     );
-  }, [projectId, type, title, assignee, mentionsInput, content]);
+  }, [projectId, type, title, assignee, mentionsInput, content, priority]);
 
   const canSave = useMemo(() => content.trim().length >= 3 && !isSaving, [content, isSaving]);
 
+  // Bug 1 fix: always overwrite ALL fields when switching templates
   const applyTemplate = (templateId: string) => {
     const template = NOTE_TEMPLATES.find(item => item.id === templateId);
     if (!template) return;
     setActiveTemplateId(template.id);
     setType(template.type);
     setIsTypeManual(true);
-    if (!title.trim()) setTitle(template.title);
-    if (!content.trim()) {
-      setContent(template.content);
-      return;
-    }
-    setContent(`${content.trim()}\n\n${template.content}`);
+    setTitle(template.title);
+    setContent(template.content);
   };
 
   const save = async () => {
@@ -89,10 +115,12 @@ const QuickCapture: React.FC = () => {
       const trimmedContent = content.trim();
       const firstLine = trimmedContent.split('\n').find(line => line.trim().length > 0) || 'Quick note';
       await api.notes.create({
-        projectId: projectId || null,
+        // Bug 2 fix: always pass '' for global notes, not null
+        projectId: projectId || '',
         title: title.trim() || firstLine.slice(0, 70),
         content: trimmedContent,
         type,
+        priority,
         assignee: assignee.trim() || undefined,
         mentions: mentionsInput.split(',').map(item => item.trim().replace(/^@/, '')).filter(Boolean),
         status: 'pending',
@@ -144,6 +172,30 @@ const QuickCapture: React.FC = () => {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [canSave, projectId, title, assignee, mentionsInput, content, type]);
+
+  const priorityOptions: { value: 'critical' | 'medium' | 'normal'; label: string; icon: string; selected: string; base: string }[] = [
+    {
+      value: 'critical',
+      label: 'Critical',
+      icon: '🔴',
+      selected: 'border-red-500 bg-red-500/20 text-red-300',
+      base: 'border-slate-800 text-slate-400',
+    },
+    {
+      value: 'medium',
+      label: 'Medium',
+      icon: '🟡',
+      selected: 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
+      base: 'border-slate-800 text-slate-400',
+    },
+    {
+      value: 'normal',
+      label: 'Normal',
+      icon: '⚪',
+      selected: 'border-slate-500 bg-slate-500/20 text-slate-300',
+      base: 'border-slate-800 text-slate-400',
+    },
+  ];
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 animate-fade-in pb-24">
@@ -214,37 +266,46 @@ const QuickCapture: React.FC = () => {
           />
         </div>
 
+        {/* Type selector */}
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => {
-              setType('idea');
-              setIsTypeManual(true);
-            }}
+            onClick={() => { setType('idea'); setIsTypeManual(true); }}
             className={`text-xs px-3 py-1.5 rounded-lg border ${type === 'idea' ? 'border-blue-500 bg-blue-500/10 text-blue-300' : 'border-slate-800 text-slate-400'}`}
           >
             Idea (Alt+1)
           </button>
           <button
             type="button"
-            onClick={() => {
-              setType('bug');
-              setIsTypeManual(true);
-            }}
+            onClick={() => { setType('bug'); setIsTypeManual(true); }}
             className={`text-xs px-3 py-1.5 rounded-lg border ${type === 'bug' ? 'border-red-500 bg-red-500/10 text-red-300' : 'border-slate-800 text-slate-400'}`}
           >
             Bug (Alt+2)
           </button>
           <button
             type="button"
-            onClick={() => {
-              setType('todo');
-              setIsTypeManual(true);
-            }}
+            onClick={() => { setType('todo'); setIsTypeManual(true); }}
             className={`text-xs px-3 py-1.5 rounded-lg border ${type === 'todo' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 text-slate-400'}`}
           >
             Task (Alt+3)
           </button>
+        </div>
+
+        {/* Priority selector (Part 2C) */}
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-slate-500 shrink-0">Priority:</span>
+          <div className="flex gap-2">
+            {priorityOptions.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPriority(opt.value)}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${priority === opt.value ? opt.selected : opt.base}`}
+              >
+                {opt.icon} {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <textarea
@@ -283,9 +344,3 @@ const QuickCapture: React.FC = () => {
 };
 
 export default QuickCapture;
-
-
-
-
-
-

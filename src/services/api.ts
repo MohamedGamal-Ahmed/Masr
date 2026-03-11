@@ -326,6 +326,9 @@ export const api = {
                 ...note,
                 title: note.title ? DOMPurify.sanitize(note.title) : note.title,
                 content: note.content ? DOMPurify.sanitize(note.content) : note.content,
+                // Bug 2 fix: normalize projectId to '' (never null/undefined) so ProjectDetails filter works
+                projectId: note.projectId || '',
+                priority: note.priority ?? 'normal',
                 id: uuidv4(),
                 date: new Date().toISOString(),
                 progressLogs: [],

@@ -5,6 +5,20 @@ import { Note, Project, VersionLog } from '@/types';
 import { api } from '@/services/api';
 import { computeNotePriority } from '@/utils/noteIntelligence';
 
+// ── PriorityBadge ─────────────────────────────────────────────────────────────
+const PriorityBadge = ({ priority }: { priority?: string }) => {
+  const config = {
+    critical: { label: 'حرج', cls: 'bg-red-500/20 text-red-400 border border-red-500/30' },
+    medium: { label: 'متوسط', cls: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' },
+    normal: { label: 'عادي', cls: 'bg-slate-500/20 text-slate-400 border border-slate-500/30' },
+  };
+  const p = priority ?? 'normal';
+  const c = config[p as keyof typeof config] ?? config.normal;
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full ${c.cls}`}>{c.label}</span>
+  );
+};
+
 const parseDateValue = (dStr: string): number => {
   const d = new Date(dStr);
   if (!isNaN(d.getTime())) return d.getTime();
@@ -15,7 +29,7 @@ const parseDateValue = (dStr: string): number => {
   return 0;
 };
 
-const StatCard = memo(({ icon: Icon, value, label, colorClass }: { icon: any, value: string | number, label: string, colorClass: string }) => (
+const StatCard = memo(({ icon: Icon, value, label, colorClass }: { icon: React.ComponentType<{ className?: string; size?: string | number }>, value: string | number, label: string, colorClass: string }) => (
   <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
     <Icon className={`${colorClass} mb-2`} size={20} />
     <span className="text-2xl font-bold">{value}</span>
@@ -23,7 +37,7 @@ const StatCard = memo(({ icon: Icon, value, label, colorClass }: { icon: any, va
   </div>
 ));
 
-const ActivityItem = memo(({ log }: { log: VersionLog | any }) => (
+const ActivityItem = memo(({ log }: { log: VersionLog & { timelineType?: string } & Record<string, unknown> }) => (
   <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex gap-4">
     <div className="flex flex-col items-center">
       <div className={`w-2 h-2 rounded-full mb-1 ${log.type === 'bugfix' ? 'bg-red-500' : log.type === 'feature' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
@@ -46,7 +60,7 @@ const ActivityItem = memo(({ log }: { log: VersionLog | any }) => (
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<{ activeProjects: number, streak: number, syncStatus: number, lastSyncTime: string } | null>(null);
-  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [recentLogs, setRecentLogs] = useState<(VersionLog & Record<string, unknown>)[]>([]);
   const [activeReminders, setActiveReminders] = useState<Note[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [lastProjectId, setLastProjectId] = useState<string | null>(null);
@@ -79,8 +93,11 @@ const Dashboard: React.FC = () => {
             date: p.date,
             title: `تحديث: ${n.title}`,
             description: p.content,
-            type: (n.type === 'bug' ? 'bugfix' : 'feature') as any,
-            timelineType: 'note' as const
+            type: (n.type === 'bug' ? 'bugfix' : 'feature') as 'bugfix' | 'feature',
+            timelineType: 'note' as const,
+            projectId: n.projectId,
+            version: '',
+            changes: [] as string[],
           })))
         ].sort((a, b) => {
           const parseDate = (dStr: string) => {
@@ -226,6 +243,7 @@ const Dashboard: React.FC = () => {
         </Link>
       )}
 
+      {/* Bug 3 fix: "تركيز اليوم" – full-width cards, project name, PriorityBadge, mobile-safe */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-slate-200">تركيز اليوم (3 مهام)</h3>
@@ -235,37 +253,49 @@ const Dashboard: React.FC = () => {
         {focusTasks.length === 0 ? (
           <p className="text-xs text-slate-500">لا توجد مهام معلقة اليوم.</p>
         ) : (
-          <div className="space-y-2">
-            {focusTasks.map(task => (
-              <div key={task.id} className="flex items-center justify-between gap-2 bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">
-                <div className="min-w-0">
-                  <p className="text-sm text-slate-200 truncate">{task.title}</p>
-                  <span className={`inline-flex text-[10px] mt-1 px-1.5 py-0.5 rounded border ${computeNotePriority(task).level === 'high'
-                    ? 'border-red-500/40 text-red-300 bg-red-500/10'
-                    : computeNotePriority(task).level === 'medium'
-                      ? 'border-amber-500/40 text-amber-300 bg-amber-500/10'
-                      : 'border-slate-700 text-slate-400 bg-slate-900'
-                    }`}>
-                    {computeNotePriority(task).level}
-                  </span>
-                  <p className="text-[10px] text-slate-500">{task.status === 'in_progress' ? 'جاري العمل' : 'معلقة'}</p>
+          <div className="flex flex-col gap-3">
+            {focusTasks.map(task => {
+              const project = projects.find(p => p.id === task.projectId);
+              return (
+                <div
+                  key={task.id}
+                  className="w-full flex items-start justify-between gap-3 bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-200 truncate">{task.title}</p>
+                    {/* Bug 3a: project name below task title */}
+                    <p className="text-xs text-slate-500 mt-0.5">{project?.name ?? 'عام'}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      {/* Bug 3c: priority badge on each card */}
+                      <PriorityBadge priority={task.priority} />
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${computeNotePriority(task).level === 'high'
+                        ? 'border-red-500/40 text-red-300 bg-red-500/10'
+                        : computeNotePriority(task).level === 'medium'
+                          ? 'border-amber-500/40 text-amber-300 bg-amber-500/10'
+                          : 'border-slate-700 text-slate-400 bg-slate-900'
+                        }`}>
+                        {computeNotePriority(task).level}
+                      </span>
+                      <p className="text-[10px] text-slate-500">{task.status === 'in_progress' ? 'جاري العمل' : 'معلقة'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0 mt-0.5">
+                    <button
+                      onClick={() => quickUpdateTaskStatus(task.id, 'in_progress')}
+                      className="text-[10px] px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap"
+                    >
+                      ابدأ
+                    </button>
+                    <button
+                      onClick={() => quickUpdateTaskStatus(task.id, 'completed')}
+                      className="text-[10px] px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap"
+                    >
+                      تم
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => quickUpdateTaskStatus(task.id, 'in_progress')}
-                    className="text-[10px] px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                  >
-                    ابدأ
-                  </button>
-                  <button
-                    onClick={() => quickUpdateTaskStatus(task.id, 'completed')}
-                    className="text-[10px] px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                  >
-                    تم
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -331,9 +361,12 @@ const Dashboard: React.FC = () => {
                       {note.title}
                     </h4>
                     <div className="flex justify-between items-center mt-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                        {note.status === 'in_progress' ? 'جاري العمل' : 'معلق'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                          {note.status === 'in_progress' ? 'جاري العمل' : 'معلق'}
+                        </span>
+                        <PriorityBadge priority={note.priority} />
+                      </div>
                       <ArrowUpRight size={14} className="text-slate-600 group-hover:text-slate-300" />
                     </div>
                   </div>

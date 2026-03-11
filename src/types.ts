@@ -64,6 +64,7 @@ export interface Note {
   assignee?: string;
   mentions?: string[];
   githubIssue?: GitHubIssueLink;
+  priority?: 'critical' | 'medium' | 'normal';
 }
 
 export interface IntegrationHook {

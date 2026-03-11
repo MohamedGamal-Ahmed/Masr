@@ -22,6 +22,7 @@ const AddNote: React.FC = () => {
   const [assignee, setAssignee] = useState('');
   const [mentionsInput, setMentionsInput] = useState('');
   const [content, setContent] = useState('');
+  const [priority, setPriority] = useState<'critical' | 'medium' | 'normal'>('normal');
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [isTypeManual, setIsTypeManual] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -44,6 +45,7 @@ const AddNote: React.FC = () => {
     void fetchProjects();
   }, []);
 
+  // Bug 1 fix: always overwrite ALL fields when switching templates
   const applyTemplate = (templateId: string) => {
     const template = NOTE_TEMPLATES.find((t) => t.id === templateId);
     if (!template) return;
@@ -51,15 +53,8 @@ const AddNote: React.FC = () => {
     setActiveTemplateId(template.id);
     setNoteType(template.type);
     setIsTypeManual(true);
-
-    if (!title.trim()) setTitle(template.title);
-
-    if (!content.trim()) {
-      setContent(template.content);
-      return;
-    }
-
-    setContent(`${content.trim()}\n\n${template.content}`);
+    setTitle(template.title);
+    setContent(template.content);
   };
 
   useEffect(() => {
@@ -113,10 +108,11 @@ const AddNote: React.FC = () => {
       const finalTitle = rawData.title || autoTitle;
 
       await api.notes.create({
-        projectId: rawData.projectId,
+        projectId: rawData.projectId || '',   // Bug 2 fix: '' not null
         title: finalTitle,
         content: rawData.content,
         type: rawData.type,
+        priority,
         assignee: rawData.assignee,
         mentions: rawData.mentions,
         status: 'pending',
@@ -131,6 +127,12 @@ const AddNote: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  const priorityOptions: { value: 'critical' | 'medium' | 'normal'; label: string; icon: string; selected: string }[] = [
+    { value: 'critical', label: 'Critical', icon: '🔴', selected: 'border-red-500 bg-red-500/20 text-red-300' },
+    { value: 'medium', label: 'Medium', icon: '🟡', selected: 'border-yellow-500 bg-yellow-500/20 text-yellow-300' },
+    { value: 'normal', label: 'Normal', icon: '⚪', selected: 'border-slate-500 bg-slate-500/20 text-slate-300' },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
@@ -232,6 +234,26 @@ const AddNote: React.FC = () => {
                 }`}
             >
               {typeItem.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Priority selector (Part 2C) */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Priority</label>
+        <div className="flex gap-2">
+          {priorityOptions.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setPriority(opt.value)}
+              className={`px-4 py-2 rounded-lg border text-sm transition-all ${priority === opt.value
+                ? opt.selected
+                : 'bg-slate-900 border-slate-800 text-slate-500'
+                }`}
+            >
+              {opt.icon} {opt.label}
             </button>
           ))}
         </div>

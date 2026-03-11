@@ -6,7 +6,7 @@ import { api, GitHubRepo } from '@/services/api';
 import { StaggerContainer, StaggerItem, ScaleHover } from '@/components/Animations';
 
 // Default GitHub username - can be changed in the modal
-const DEFAULT_GITHUB_USERNAME = 'MohamedGamal-Ahmed';
+const DEFAULT_GITHUB_USERNAME = '';
 
 const getLanguageIcon = (lang: string) => {
   const l = (lang || '').toLowerCase();
